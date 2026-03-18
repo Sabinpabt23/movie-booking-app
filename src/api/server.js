@@ -5,6 +5,7 @@ const contactRoutes = require('../routes/contactRoutes');
 const authRoutes = require('../routes/authRoutes');
 const adminRoutes = require('../routes/adminRoutes');
 const adminAuthRoutes = require('../routes/adminAuthRoutes');
+const path = require('path');
 
 dotenv.config();
 
@@ -26,6 +27,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api', contactRoutes);
 
 app.use('/api/admin', adminRoutes);
+
+app.use('/uploads', express.static(path.join(__dirname, '../../public/uploads')));
 
 app.get('/api/test', (req, res) => {
     res.json({ message: 'Server is running' });

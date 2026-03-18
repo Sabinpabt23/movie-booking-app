@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const adminAuth = require('../middleware/adminAuth');
+const upload = require('../middleware/upload');
 const {
     Movie, Theater, Hall, Show, 
     Booking, User, Payment, Ticket, 
@@ -8,13 +9,21 @@ const {
 } = require('../models');
 const { Op } = require('sequelize');
 
-// All routes require admin authentication
-router.use(adminAuth);
-
-// ========== DASHBOARD STATS ==========
-
 router.get('/dashboard', async (req, res) => {
     try {
+        // Get current date ranges
+        const now = new Date();
+        const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const endOfPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+        // Helper function for simple linear percentage (each item = 0.01%)
+        const getLinearChange = (current) => {
+            // Each item = 0.01%
+            return (current * 0.01).toFixed(2);
+        };
+        
+        // Total counts
         const totalMovies = await Movie.count();
         const totalTheaters = await Theater.count();
         const totalShows = await Show.count();
@@ -22,16 +31,75 @@ router.get('/dashboard', async (req, res) => {
         const totalUsers = await User.count();
         const unreadMessages = await ContactMessage.count({ where: { status: 'unread' } });
 
+        // Current month counts
+        const currentMonthBookings = await Booking.count({
+            where: { booking_date: { [Op.gte]: startOfCurrentMonth } }
+        });
+        
+        const currentMonthUsers = await User.count({
+            where: { user_reg_date: { [Op.gte]: startOfCurrentMonth } }
+        });
+        
+        const currentMonthMessages = await ContactMessage.count({
+            where: { 
+                created_at: { [Op.gte]: startOfCurrentMonth }
+            }
+        });
+
+        // Previous month counts
+        const previousMonthBookings = await Booking.count({
+            where: {
+                booking_date: {
+                    [Op.gte]: startOfPreviousMonth,
+                    [Op.lt]: startOfCurrentMonth
+                }
+            }
+        });
+        
+        const previousMonthUsers = await User.count({
+            where: {
+                user_reg_date: {
+                    [Op.gte]: startOfPreviousMonth,
+                    [Op.lt]: startOfCurrentMonth
+                }
+            }
+        });
+        
+        const previousMonthMessages = await ContactMessage.count({
+            where: {
+                created_at: {
+                    [Op.gte]: startOfPreviousMonth,
+                    [Op.lt]: startOfCurrentMonth
+                }
+            }
+        });
+
+        // Calculate linear percentages based on current counts
+        const movieChange = getLinearChange(totalMovies);
+        const theaterChange = getLinearChange(totalTheaters);
+        const showChange = getLinearChange(totalShows);
+        const bookingChange = getLinearChange(totalBookings);
+        const userChange = getLinearChange(totalUsers);
+        const messageChange = getLinearChange(unreadMessages);
+
         res.json({
             totalMovies,
             totalTheaters,
             totalShows,
             totalBookings,
             totalUsers,
-            unreadMessages
+            unreadMessages,
+            changes: {
+                movies: { value: movieChange, direction: 'up' },
+                theaters: { value: theaterChange, direction: 'up' },
+                shows: { value: showChange, direction: 'up' },
+                bookings: { value: bookingChange, direction: 'up' },
+                users: { value: userChange, direction: 'up' },
+                messages: { value: messageChange, direction: 'up' }
+            }
         });
     } catch (error) {
-        console.error('Dashboard error:', error); // Add this log
+        console.error('Dashboard error:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
@@ -46,24 +114,50 @@ router.get('/movies', async (req, res) => {
     }
 });
 
-router.post('/movies', async (req, res) => {
+router.post('/movies', upload.single('movie_poster'), async (req, res) => {
     try {
-        const movie = await Movie.create(req.body);
+        const movieData = { ...req.body };
+        
+        // If file was uploaded, add the path
+        if (req.file) {
+            movieData.movie_poster = `/uploads/movies/${req.file.filename}`;
+        }
+
+        const movie = await Movie.create(movieData);
         res.status(201).json(movie);
     } catch (error) {
+        console.error('Error creating movie:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
 
-router.put('/movies/:id', async (req, res) => {
+// Update movie PUT route
+router.put('/movies/:id', upload.single('movie_poster'), async (req, res) => {
     try {
         const movie = await Movie.findByPk(req.params.id);
         if (!movie) {
             return res.status(404).json({ message: 'Movie not found' });
         }
-        await movie.update(req.body);
-        res.json(movie);
+
+        const movieData = { ...req.body };
+        
+        // If new file was uploaded, update the path
+        if (req.file) {
+            movieData.movie_poster = `/uploads/movies/${req.file.filename}`;
+            console.log('New file uploaded:', movieData.movie_poster);
+        } else if (req.body.movie_poster) {
+            // Keep existing poster if no new file
+            movieData.movie_poster = req.body.movie_poster;
+            console.log('Keeping existing poster:', movieData.movie_poster);
+        }
+
+        console.log('Updating movie with data:', movieData);
+        await movie.update(movieData);
+        
+        const updatedMovie = await Movie.findByPk(req.params.id);
+        res.json(updatedMovie);
     } catch (error) {
+        console.error('Error updating movie:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });

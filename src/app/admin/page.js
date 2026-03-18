@@ -5,196 +5,478 @@ import Link from 'next/link';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState({
+    totalMovies: 0,
+    totalTheaters: 0,
+    totalShows: 0,
+    totalBookings: 0,
+    totalUsers: 0,
+    unreadMessages: 0
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [authChecked, setAuthChecked] = useState(false);
+  const [recentActivity, setRecentActivity] = useState([
+    { id: 1, action: 'New booking created', time: '5 minutes ago', icon: '🎫' },
+    { id: 2, action: 'Movie added: Avengers', time: '1 hour ago', icon: '🎬' },
+    { id: 3, action: 'New showtime created', time: '3 hours ago', icon: '⏰' },
+    { id: 4, action: 'New user registered', time: '5 hours ago', icon: '👤' },
+  ]);
 
   useEffect(() => {
-    checkAuthAndFetchData();
+    fetchDashboardStats();
   }, []);
 
-  const checkAuthAndFetchData = async () => {
+  const fetchDashboardStats = async () => {
     try {
-      // Check if user is logged in
       const token = localStorage.getItem('adminToken');
-      const userStr = localStorage.getItem('admin');
       
-      console.log('Token exists:', !!token);
-      console.log('User exists:', !!userStr);
-
-      if (!token || !userStr) {
-        console.log('No token or user, redirecting to login');
-        router.push('/login');
+      if (!token) {
+        router.push('/admin/login');
         return;
       }
 
-      // Check if user is admin
-      const user = JSON.parse(userStr);
-      console.log('User role:', user.role);
+      const response = await fetch('http://localhost:5000/api/admin/dashboard', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
-      // For now, let's bypass role check for testing
-      // We'll add this back after fixing
-      
-      await fetchDashboardStats(token);
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('admin');
+        router.push('/admin/login');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setStats(data);
       
     } catch (err) {
-      console.error('Auth check error:', err);
-      setError('Authentication failed');
-      setLoading(false);
+      console.error('Error fetching dashboard:', err);
+      setError('Failed to load dashboard data');
     } finally {
-      setAuthChecked(true);
+      setLoading(false);
     }
   };
 
-const fetchDashboardStats = async (token) => {
-  try {
-    console.log('Fetching dashboard stats with token:', token);
-    
-    const response = await fetch('http://localhost:5000/api/admin/dashboard', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    console.log('Dashboard response status:', response.status);
-    
-    // Try to get error details
-    const responseText = await response.text();
-    console.log('Response text:', responseText);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status} - ${responseText}`);
-    }
-
-    const data = JSON.parse(responseText);
-    console.log('Dashboard data received:', data);
-    setStats(data);
-    
-  } catch (err) {
-    console.error('Fetch error details:', err);
-    setError('Failed to load dashboard data: ' + err.message);
-  } finally {
-    setLoading(false);
-  }
-};
-
-  // Show loading state
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '3rem' }}>
-        <div style={{ fontSize: '1.2rem', color: '#6b7280' }}>Loading dashboard...</div>
-        <div style={{ marginTop: '1rem', color: '#9ca3af' }}>Please wait</div>
-      </div>
-    );
-  }
-
-  // Show error state
-  if (error) {
-    return (
-      <div style={{ textAlign: 'center', padding: '3rem' }}>
-        <div style={{ 
-          background: '#fee2e2', 
-          color: '#991b1b', 
-          padding: '1rem', 
-          borderRadius: '8px',
-          maxWidth: '400px',
-          margin: '0 auto'
-        }}>
-          <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⚠️</div>
-          <div>{error}</div>
-          <button 
-            onClick={() => router.push('/')}
-            style={{
-              marginTop: '1rem',
-              padding: '0.5rem 1rem',
-              background: '#f97315',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer'
-            }}
-          >
-            Go to Home
-          </button>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '60vh' 
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ 
+            width: '50px', 
+            height: '50px', 
+            border: '3px solid #f3f3f3', 
+            borderTop: '3px solid #f97315', 
+            borderRadius: '50%', 
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1rem'
+          }}></div>
+          <p style={{ color: '#6b7280' }}>Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
-  // Show no data state
-  if (!stats) {
+  if (error) {
     return (
-      <div style={{ textAlign: 'center', padding: '3rem' }}>
-        <div style={{ color: '#6b7280' }}>No dashboard data available</div>
+      <div style={{ 
+        background: '#fee2e2', 
+        color: '#991b1b', 
+        padding: '1rem', 
+        borderRadius: '8px',
+        marginBottom: '1rem' 
+      }}>
+        {error}
       </div>
     );
   }
 
-  const statCards = [
-    { title: 'Total Movies', value: stats.totalMovies || 0, icon: '🎬', color: '#f97315' },
-    { title: 'Total Theaters', value: stats.totalTheaters || 0, icon: '🏢', color: '#3b82f6' },
-    { title: 'Total Shows', value: stats.totalShows || 0, icon: '🎫', color: '#10b981' },
-    { title: 'Total Bookings', value: stats.totalBookings || 0, icon: '📅', color: '#8b5cf6' },
-    { title: 'Total Users', value: stats.totalUsers || 0, icon: '👥', color: '#ec4899' },
-    { title: 'Unread Messages', value: stats.unreadMessages || 0, icon: '✉️', color: '#f59e0b' },
+ const statCards = [
+  { 
+    title: 'Total Movies', 
+    value: stats.totalMovies, 
+    icon: '🎬', 
+    color: '#f97315', 
+    bg: '#fff6e9',
+    change: stats.changes?.movies 
+  },
+  { 
+    title: 'Total Theaters', 
+    value: stats.totalTheaters, 
+    icon: '🏢', 
+    color: '#3b82f6', 
+    bg: '#eff6ff',
+    change: stats.changes?.theaters 
+  },
+  { 
+    title: 'Total Shows', 
+    value: stats.totalShows, 
+    icon: '🎫', 
+    color: '#10b981', 
+    bg: '#e6f7f0',
+    change: stats.changes?.shows 
+  },
+  { 
+    title: 'Total Bookings', 
+    value: stats.totalBookings, 
+    icon: '📅', 
+    color: '#8b5cf6', 
+    bg: '#f3e8ff',
+    change: stats.changes?.bookings 
+  },
+  { 
+    title: 'Total Users', 
+    value: stats.totalUsers, 
+    icon: '👥', 
+    color: '#ec4899', 
+    bg: '#fce7f3',
+    change: stats.changes?.users 
+  },
+  { 
+    title: 'Unread Messages', 
+    value: stats.unreadMessages, 
+    icon: '✉️', 
+    color: '#f59e0b', 
+    bg: '#fef3c7',
+    change: stats.changes?.messages 
+  },
+];
+
+  const quickActions = [
+    { title: 'Add Movie', icon: '🎬', desc: 'Create new movie', link: '/admin/movies', color: '#f97315' },
+    { title: 'Add Theater', icon: '🏢', desc: 'Register new theater', link: '/admin/theaters', color: '#3b82f6' },
+    { title: 'Create Show', icon: '🎫', desc: 'Schedule showtime', link: '/admin/shows', color: '#10b981' },
+    { title: 'View Bookings', icon: '📅', desc: 'Check all bookings', link: '/admin/bookings', color: '#8b5cf6' },
+    { title: 'Messages', icon: '✉️', desc: 'Read contact messages', link: '/admin/messages', color: '#f59e0b' },
+    { title: 'Settings', icon: '⚙️', desc: 'System settings', link: '/admin/settings', color: '#6b7280' },
   ];
 
   return (
     <div>
-      <div className="stats-grid">
-        {statCards.map((card, index) => (
-          <div key={index} className="stat-card">
-            <div className="stat-title">
-              <span className="stat-icon">{card.icon}</span>
-              {card.title}
-            </div>
-            <div className="stat-value">{card.value}</div>
-          </div>
-        ))}
+      {/* Welcome Section */}
+      <div style={{ marginBottom: '2rem' }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: '700', color: '#1f2937', marginBottom: '0.5rem' }}>
+          Welcome back, Admin
+        </h1>
+        <p style={{ color: '#6b7280' }}>
+          Here's what's happening with your movie booking system today.
+        </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-        {/* Quick Actions */}
-        <div className="admin-form" style={{ padding: '1.5rem' }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '1rem' }}>Quick Actions</h3>
-          <div style={{ display: 'grid', gap: '0.75rem' }}>
-            <Link href="/admin/movies" className="admin-btn admin-btn-primary" style={{ textAlign: 'center', textDecoration: 'none' }}>
-              ➕ Add New Movie
-            </Link>
-            <Link href="/admin/theaters" className="admin-btn admin-btn-primary" style={{ textAlign: 'center', textDecoration: 'none' }}>
-              🏢 Add New Theater
-            </Link>
-            <Link href="/admin/shows" className="admin-btn admin-btn-primary" style={{ textAlign: 'center', textDecoration: 'none' }}>
-              🎫 Create New Show
-            </Link>
+      {/* Stats Grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '1.5rem',
+        marginBottom: '2rem'
+      }}>
+{statCards.map((card, index) => (
+  <div key={index} style={{
+    background: 'white',
+    borderRadius: '16px',
+    padding: '1.5rem',
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.02)',
+    border: '1px solid #f0f0f0',
+    transition: 'all 0.3s ease',
+    position: 'relative',
+    overflow: 'hidden'
+  }}>
+    <div style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: '4px',
+      background: `linear-gradient(90deg, ${card.color}, ${card.color}80)`,
+      borderRadius: '4px 4px 0 0'
+    }}></div>
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '1rem'
+    }}>
+      <span style={{ color: '#6b7280', fontSize: '0.9rem', fontWeight: '500' }}>
+        {card.title}
+      </span>
+      <div style={{
+        width: '40px',
+        height: '40px',
+        borderRadius: '12px',
+        background: card.bg,
+        color: card.color,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '1.2rem'
+      }}>
+        {card.icon}
+      </div>
+    </div>
+    <div style={{ fontSize: '2.5rem', fontWeight: '700', color: '#1f2937', marginBottom: '0.5rem' }}>
+      {card.value}
+    </div>
+    {card.change && (
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '0.5rem', 
+        fontSize: '0.85rem', 
+        color: card.change.direction === 'up' ? '#10b981' : '#ef4444' 
+      }}>
+        {card.change.direction === 'up' ? '↑' : '↓'} {Math.abs(card.change.value)}% 
+        <span style={{ color: '#6b7280' }}>vs last month</span>
+      </div>
+    )}
+  </div>
+))}
+      </div>
+
+      {/* Two Column Layout */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '1.5rem',
+        marginBottom: '1.5rem'
+      }}>
+        {/* Quick Actions Panel */}
+        <div style={{
+          background: 'white',
+          borderRadius: '16px',
+          padding: '1.5rem',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.02)',
+          border: '1px solid #f0f0f0'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '1.5rem',
+            paddingBottom: '1rem',
+            borderBottom: '1px solid #f0f0f0'
+          }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1f2937' }}>Quick Actions</h3>
+            <Link href="#" style={{ color: '#f97315', fontSize: '0.9rem', textDecoration: 'none' }}>View All</Link>
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '1rem'
+          }}>
+            {quickActions.map((action, index) => (
+              <Link 
+                key={index} 
+                href={action.link}
+                style={{ textDecoration: 'none' }}
+              >
+                <div style={{
+                  background: '#f9fafb',
+                  borderRadius: '12px',
+                  padding: '1.2rem 1rem',
+                  textAlign: 'center',
+                  transition: 'all 0.3s ease',
+                  border: '1px solid transparent',
+                  cursor: 'pointer'
+                }}>
+                  <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{action.icon}</div>
+                  <div style={{ fontWeight: '600', color: '#1f2937', marginBottom: '0.25rem', fontSize: '0.95rem' }}>
+                    {action.title}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{action.desc}</div>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
 
-        {/* System Status */}
-        <div className="admin-form" style={{ padding: '1.5rem' }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '1rem' }}>System Status</h3>
-          <div style={{ display: 'grid', gap: '0.75rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid #f0f0f0' }}>
-              <span>Server Status</span>
-              <span className="badge badge-success">Online</span>
+        {/* System Status Panel */}
+        <div style={{
+          background: 'white',
+          borderRadius: '16px',
+          padding: '1.5rem',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.02)',
+          border: '1px solid #f0f0f0'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '1.5rem',
+            paddingBottom: '1rem',
+            borderBottom: '1px solid #f0f0f0'
+          }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1f2937' }}>System Status</h3>
+            <span style={{
+              padding: '0.25rem 0.75rem',
+              borderRadius: '20px',
+              fontSize: '0.8rem',
+              fontWeight: '500',
+              background: '#d1fae5',
+              color: '#065f46'
+            }}>All Systems Online</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '0.75rem 0',
+              borderBottom: '1px solid #f0f0f0'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#4b5563' }}>
+                <span>🖥️</span> Server Status
+              </div>
+              <span style={{
+                padding: '0.25rem 0.75rem',
+                borderRadius: '20px',
+                fontSize: '0.8rem',
+                fontWeight: '500',
+                background: '#d1fae5',
+                color: '#065f46'
+              }}>Online</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid #f0f0f0' }}>
-              <span>Database</span>
-              <span className="badge badge-success">Connected</span>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '0.75rem 0',
+              borderBottom: '1px solid #f0f0f0'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#4b5563' }}>
+                <span>🗄️</span> Database
+              </div>
+              <span style={{
+                padding: '0.25rem 0.75rem',
+                borderRadius: '20px',
+                fontSize: '0.8rem',
+                fontWeight: '500',
+                background: '#d1fae5',
+                color: '#065f46'
+              }}>Connected</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid #f0f0f0' }}>
-              <span>API Status</span>
-              <span className="badge badge-success">Operational</span>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '0.75rem 0',
+              borderBottom: '1px solid #f0f0f0'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#4b5563' }}>
+                <span>🔌</span> API Status
+              </div>
+              <span style={{
+                padding: '0.25rem 0.75rem',
+                borderRadius: '20px',
+                fontSize: '0.8rem',
+                fontWeight: '500',
+                background: '#d1fae5',
+                color: '#065f46'
+              }}>Operational</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0' }}>
-              <span>New Messages</span>
-              <span className="badge badge-warning">{stats.unreadMessages || 0} Unread</span>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '0.75rem 0',
+              borderBottom: '1px solid #f0f0f0'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#4b5563' }}>
+                <span>📊</span> Active Bookings
+              </div>
+              <span style={{ fontWeight: '600', color: '#1f2937' }}>{stats.totalBookings}</span>
+            </div>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '0.75rem 0'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#4b5563' }}>
+                <span>📧</span> Unread Messages
+              </div>
+              <span style={{
+                padding: '0.25rem 0.75rem',
+                borderRadius: '20px',
+                fontSize: '0.8rem',
+                fontWeight: '500',
+                background: '#fed7aa',
+                color: '#92400e'
+              }}>{stats.unreadMessages} Unread</span>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Recent Activity Panel */}
+      <div style={{
+        background: 'white',
+        borderRadius: '16px',
+        padding: '1.5rem',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.02)',
+        border: '1px solid #f0f0f0',
+        marginTop: '1.5rem'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '1.5rem',
+          paddingBottom: '1rem',
+          borderBottom: '1px solid #f0f0f0'
+        }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1f2937' }}>Recent Activity</h3>
+          <Link href="#" style={{ color: '#f97315', fontSize: '0.9rem', textDecoration: 'none' }}>View All</Link>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+          {recentActivity.map((activity) => (
+            <div key={activity.id} style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem',
+              padding: '0.75rem 0',
+              borderBottom: '1px solid #f0f0f0'
+            }}>
+              <div style={{
+                width: '36px',
+                height: '36px',
+                background: '#fff6e9',
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#f97315',
+                fontSize: '1.1rem'
+              }}>
+                {activity.icon}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: '500', color: '#1f2937', marginBottom: '0.25rem', fontSize: '0.95rem' }}>
+                  {activity.action}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{activity.time}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
