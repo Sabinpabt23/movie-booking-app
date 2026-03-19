@@ -15,12 +15,6 @@ export default function AdminDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [recentActivity, setRecentActivity] = useState([
-    { id: 1, action: 'New booking created', time: '5 minutes ago', icon: '🎫' },
-    { id: 2, action: 'Movie added: Avengers', time: '1 hour ago', icon: '🎬' },
-    { id: 3, action: 'New showtime created', time: '3 hours ago', icon: '⏰' },
-    { id: 4, action: 'New user registered', time: '5 hours ago', icon: '👤' },
-  ]);
 
   useEffect(() => {
     fetchDashboardStats();
@@ -54,7 +48,16 @@ export default function AdminDashboard() {
       }
 
       const data = await response.json();
-      setStats(data);
+      
+      setStats({
+        totalMovies: data.totalMovies || 0,
+        totalTheaters: data.totalTheaters || 0,
+        totalShows: data.totalShows || 0,
+        totalBookings: data.totalBookings || 0,
+        totalUsers: data.totalUsers || 0,
+        unreadMessages: data.unreadMessages || 0,
+        changes: data.changes || {}
+      });
       
     } catch (err) {
       console.error('Error fetching dashboard:', err);
@@ -102,56 +105,14 @@ export default function AdminDashboard() {
     );
   }
 
- const statCards = [
-  { 
-    title: 'Total Movies', 
-    value: stats.totalMovies, 
-    icon: '🎬', 
-    color: '#f97315', 
-    bg: '#fff6e9',
-    change: stats.changes?.movies 
-  },
-  { 
-    title: 'Total Theaters', 
-    value: stats.totalTheaters, 
-    icon: '🏢', 
-    color: '#3b82f6', 
-    bg: '#eff6ff',
-    change: stats.changes?.theaters 
-  },
-  { 
-    title: 'Total Shows', 
-    value: stats.totalShows, 
-    icon: '🎫', 
-    color: '#10b981', 
-    bg: '#e6f7f0',
-    change: stats.changes?.shows 
-  },
-  { 
-    title: 'Total Bookings', 
-    value: stats.totalBookings, 
-    icon: '📅', 
-    color: '#8b5cf6', 
-    bg: '#f3e8ff',
-    change: stats.changes?.bookings 
-  },
-  { 
-    title: 'Total Users', 
-    value: stats.totalUsers, 
-    icon: '👥', 
-    color: '#ec4899', 
-    bg: '#fce7f3',
-    change: stats.changes?.users 
-  },
-  { 
-    title: 'Unread Messages', 
-    value: stats.unreadMessages, 
-    icon: '✉️', 
-    color: '#f59e0b', 
-    bg: '#fef3c7',
-    change: stats.changes?.messages 
-  },
-];
+  const statCards = [
+    { title: 'Total Movies', value: stats.totalMovies, icon: '🎬', color: '#f97315', bg: '#fff6e9' },
+    { title: 'Total Theaters', value: stats.totalTheaters, icon: '🏢', color: '#3b82f6', bg: '#eff6ff' },
+    { title: 'Total Shows', value: stats.totalShows, icon: '🎫', color: '#10b981', bg: '#e6f7f0' },
+    { title: 'Total Bookings', value: stats.totalBookings, icon: '📅', color: '#8b5cf6', bg: '#f3e8ff' },
+    { title: 'Total Users', value: stats.totalUsers, icon: '👥', color: '#ec4899', bg: '#fce7f3' },
+    { title: 'Unread Messages', value: stats.unreadMessages, icon: '✉️', color: '#f59e0b', bg: '#fef3c7' },
+  ];
 
   const quickActions = [
     { title: 'Add Movie', icon: '🎬', desc: 'Create new movie', link: '/admin/movies', color: '#f97315' },
@@ -181,66 +142,72 @@ export default function AdminDashboard() {
         gap: '1.5rem',
         marginBottom: '2rem'
       }}>
-{statCards.map((card, index) => (
-  <div key={index} style={{
-    background: 'white',
-    borderRadius: '16px',
-    padding: '1.5rem',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.02)',
-    border: '1px solid #f0f0f0',
-    transition: 'all 0.3s ease',
-    position: 'relative',
-    overflow: 'hidden'
-  }}>
-    <div style={{
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      height: '4px',
-      background: `linear-gradient(90deg, ${card.color}, ${card.color}80)`,
-      borderRadius: '4px 4px 0 0'
-    }}></div>
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '1rem'
-    }}>
-      <span style={{ color: '#6b7280', fontSize: '0.9rem', fontWeight: '500' }}>
-        {card.title}
-      </span>
-      <div style={{
-        width: '40px',
-        height: '40px',
-        borderRadius: '12px',
-        background: card.bg,
-        color: card.color,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '1.2rem'
-      }}>
-        {card.icon}
-      </div>
-    </div>
-    <div style={{ fontSize: '2.5rem', fontWeight: '700', color: '#1f2937', marginBottom: '0.5rem' }}>
-      {card.value}
-    </div>
-    {card.change && (
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '0.5rem', 
-        fontSize: '0.85rem', 
-        color: card.change.direction === 'up' ? '#10b981' : '#ef4444' 
-      }}>
-        {card.change.direction === 'up' ? '↑' : '↓'} {Math.abs(card.change.value)}% 
-        <span style={{ color: '#6b7280' }}>vs last month</span>
-      </div>
-    )}
-  </div>
-))}
+        {statCards.map((card, index) => (
+          <div key={index} style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '1.5rem',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.02)',
+            border: '1px solid #f0f0f0',
+            transition: 'all 0.3s ease',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: `linear-gradient(90deg, ${card.color}, ${card.color}80)`,
+              borderRadius: '4px 4px 0 0'
+            }}></div>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1rem'
+            }}>
+              <span style={{ color: '#6b7280', fontSize: '0.9rem', fontWeight: '500' }}>
+                {card.title}
+              </span>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '12px',
+                background: card.bg,
+                color: card.color,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.2rem'
+              }}>
+                {card.icon}
+              </div>
+            </div>
+            <div style={{ fontSize: '2.5rem', fontWeight: '700', color: '#1f2937', marginBottom: '0.5rem' }}>
+              {card.value}
+            </div>
+           {/* Show percentage based on card title */}
+<div style={{ 
+  display: 'flex', 
+  alignItems: 'center', 
+  gap: '0.5rem', 
+  fontSize: '0.85rem', 
+  color: '#10b981' 
+}}>
+  ↑ {
+    card.title === 'Total Movies' ? (stats.totalMovies * 0.01).toFixed(2) :
+    card.title === 'Total Theaters' ? (stats.totalTheaters * 0.01).toFixed(2) :
+    card.title === 'Total Shows' ? (stats.totalShows * 0.01).toFixed(2) :
+    card.title === 'Total Bookings' ? (stats.totalBookings * 0.01).toFixed(2) :
+    card.title === 'Total Users' ? (stats.totalUsers * 0.01).toFixed(2) :
+    card.title === 'Unread Messages' ? (stats.unreadMessages * 0.01).toFixed(2) : 0
+  }% 
+  <span style={{ color: '#6b7280' }}>vs last month</span>
+</div>
+          </div>
+        ))}
       </div>
 
       {/* Two Column Layout */}
@@ -418,59 +385,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recent Activity Panel */}
-      <div style={{
-        background: 'white',
-        borderRadius: '16px',
-        padding: '1.5rem',
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.02)',
-        border: '1px solid #f0f0f0',
-        marginTop: '1.5rem'
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '1.5rem',
-          paddingBottom: '1rem',
-          borderBottom: '1px solid #f0f0f0'
-        }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1f2937' }}>Recent Activity</h3>
-          <Link href="#" style={{ color: '#f97315', fontSize: '0.9rem', textDecoration: 'none' }}>View All</Link>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-          {recentActivity.map((activity) => (
-            <div key={activity.id} style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem',
-              padding: '0.75rem 0',
-              borderBottom: '1px solid #f0f0f0'
-            }}>
-              <div style={{
-                width: '36px',
-                height: '36px',
-                background: '#fff6e9',
-                borderRadius: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#f97315',
-                fontSize: '1.1rem'
-              }}>
-                {activity.icon}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: '500', color: '#1f2937', marginBottom: '0.25rem', fontSize: '0.95rem' }}>
-                  {activity.action}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{activity.time}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
+      {/* Add keyframe animation style */}
       <style jsx>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }

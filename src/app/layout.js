@@ -12,9 +12,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "MovieTicket - Book Your Favorite Movies",
-  description: "Best movie ticket booking platform in Nepal. Book seats at Kumari Cinemas, QFX, Big Movies and more.",
-  keywords: "movie ticket, booking, cinema, nepal, kumari, qfx",
+  title: "Sabin Booking - Movie Ticket Booking",
+  description: "Book your favorite movies in Nepal",
 };
 
 export default function RootLayout({ children }) {

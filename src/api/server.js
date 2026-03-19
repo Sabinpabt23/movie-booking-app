@@ -5,6 +5,8 @@ const contactRoutes = require('../routes/contactRoutes');
 const authRoutes = require('../routes/authRoutes');
 const adminRoutes = require('../routes/adminRoutes');
 const adminAuthRoutes = require('../routes/adminAuthRoutes');
+const userRoutes = require('../routes/userRoutes');
+
 const path = require('path');
 
 dotenv.config();
@@ -19,6 +21,8 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+app.use('/api/user', userRoutes);
 
 app.use('/api/admin/auth', adminAuthRoutes);
 
