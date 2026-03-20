@@ -6,6 +6,8 @@ const authRoutes = require('../routes/authRoutes');
 const adminRoutes = require('../routes/adminRoutes');
 const adminAuthRoutes = require('../routes/adminAuthRoutes');
 const userRoutes = require('../routes/userRoutes');
+const bookingRoutes = require('../routes/bookingRoutes');
+
 
 const path = require('path');
 
@@ -23,6 +25,10 @@ app.use(cors({
 app.use(express.json());
 
 app.use('/api/user', userRoutes);
+
+app.use('/api/bookings', bookingRoutes);
+
+app.use('/api', bookingRoutes);
 
 app.use('/api/admin/auth', adminAuthRoutes);
 

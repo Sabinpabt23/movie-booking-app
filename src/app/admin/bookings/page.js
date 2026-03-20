@@ -20,9 +20,12 @@ export default function AdminBookings() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
-      setBookings(data);
+      
+      // Make sure data is an array
+      setBookings(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching bookings:', error);
+      setBookings([]);
     } finally {
       setLoading(false);
     }
@@ -37,7 +40,7 @@ export default function AdminBookings() {
   };
 
   // Filter and search bookings
-  const filteredBookings = bookings.filter(booking => {
+  const filteredBookings = (Array.isArray(bookings) ? bookings : []).filter(booking => {
     // First apply status filter
     if (filter !== 'all' && booking.status?.toLowerCase() !== filter) {
       return false;
@@ -66,6 +69,14 @@ export default function AdminBookings() {
       default: return '#6b7280';
     }
   };
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '3rem' }}>
+        Loading bookings...
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -118,8 +129,10 @@ export default function AdminBookings() {
         </div>
       </div>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '3rem' }}>Loading bookings...</div>
+      {filteredBookings.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>
+          {searchTerm ? 'No bookings match your search' : 'No bookings found'}
+        </div>
       ) : (
         <div style={{ background: 'white', borderRadius: '12px', overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -133,56 +146,48 @@ export default function AdminBookings() {
                 <th style={{ padding: '1rem', textAlign: 'left' }}>Showtime</th>
                 <th style={{ padding: '1rem', textAlign: 'left' }}>Total</th>
                 <th style={{ padding: '1rem', textAlign: 'left' }}>Payment Status</th>
-              </tr>
+               </tr>
             </thead>
             <tbody>
-              {filteredBookings.length > 0 ? (
-                filteredBookings.map((booking) => (
-                  <tr key={booking.booking_id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                    <td style={{ padding: '1rem', fontWeight: '500' }}>#{booking.booking_id}</td>
-                    <td style={{ padding: '1rem' }}>
-                      <div style={{ fontWeight: '500' }}>{booking.user?.user_name}</div>
-                      <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{booking.user?.user_email}</div>
-                    </td>
-                    <td style={{ padding: '1rem', fontWeight: '500' }}>{booking.movie?.movie_title}</td>
-                    <td style={{ padding: '1rem' }}>
-                      <div>{booking.theater?.theater_name}</div>
-                      <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{booking.hall?.hall_number}</div>
-                    </td>
-                    <td style={{ padding: '1rem' }}>
-                      {booking.seats?.map((seat, i) => (
-                        <span key={i}>
-                          {seat}{i < booking.seats.length - 1 ? ', ' : ''}
-                        </span>
-                      ))}
-                    </td>
-                    <td style={{ padding: '1rem' }}>
-                      {formatDateTime(booking.show_date, booking.show_time)}
-                    </td>
-                    <td style={{ padding: '1rem', fontWeight: '500' }}>
-                      Rs {booking.payment?.payment_amount || 'N/A'}
-                    </td>
-                    <td style={{ padding: '1rem' }}>
-                      <span style={{
-                        background: getStatusColor(booking.status),
-                        color: 'white',
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '20px',
-                        fontSize: '0.8rem',
-                        fontWeight: '500'
-                      }}>
-                        {booking.status || 'Pending'}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="8" style={{ padding: '3rem', textAlign: 'center', color: '#6b7280' }}>
-                    {searchTerm ? 'No bookings match your search' : 'No bookings found'}
+              {filteredBookings.map((booking) => (
+                <tr key={booking.booking_id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                  <td style={{ padding: '1rem', fontWeight: '500' }}>#{booking.booking_id}</td>
+                  <td style={{ padding: '1rem' }}>
+                    <div style={{ fontWeight: '500' }}>{booking.user?.user_name}</div>
+                    <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{booking.user?.user_email}</div>
                   </td>
+                  <td style={{ padding: '1rem', fontWeight: '500' }}>{booking.movie?.movie_title}</td>
+                  <td style={{ padding: '1rem' }}>
+                    <div>{booking.theater?.theater_name}</div>
+                    <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{booking.hall?.hall_number}</div>
+                  </td>
+                  <td style={{ padding: '1rem' }}>
+                    {booking.seats?.map((seat, i) => (
+                      <span key={i}>
+                        {seat}{i < booking.seats.length - 1 ? ', ' : ''}
+                      </span>
+                    ))}
+                  </td>
+                  <td style={{ padding: '1rem' }}>
+                    {formatDateTime(booking.show_date, booking.show_time)}
+                  </td>
+                 <td style={{ padding: '1rem', fontWeight: '500' }}>
+  Rs {booking.total_price || 0}
+</td>
+                <td style={{ padding: '1rem' }}>
+  <span style={{
+    background: '#10b981',
+    color: 'white',
+    padding: '0.25rem 0.75rem',
+    borderRadius: '20px',
+    fontSize: '0.8rem',
+    fontWeight: '500'
+  }}>
+    Confirmed
+  </span>
+</td>
                 </tr>
-              )}
+              ))}
             </tbody>
           </table>
 

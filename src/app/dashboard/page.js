@@ -24,7 +24,7 @@ const fetchData = async () => {
     const moviesRes = await fetch('http://localhost:5000/api/admin/movies');
     const moviesData = await moviesRes.json();
     
-    // Fetch shows to get real prices
+    // Fetch shows to get prices
     const showsRes = await fetch('http://localhost:5000/api/admin/shows');
     const showsData = await showsRes.json();
 
@@ -154,10 +154,10 @@ const fetchData = async () => {
                 <div key={movie.movie_id} className="movie-card">
                   <div className="movie-poster">
                     {movie.movie_poster ? (
-                      <img 
-                        src={`http://localhost:5000${movie.movie_poster}`}
-                        alt={movie.movie_title}
-                      />
+                    <img 
+    src={movie.movie_poster}
+    alt={movie.movie_title}
+/>
                     ) : (
                       <div className="movie-poster-placeholder">🎬</div>
                     )}

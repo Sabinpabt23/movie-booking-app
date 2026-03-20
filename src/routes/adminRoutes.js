@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const adminAuth = require('../middleware/adminAuth');
-const upload = require('../middleware/upload');
+const upload = require('../middleware/uploadCloudinary');
 const {
     Movie, Theater, Hall, Show, 
     Booking, User, Payment, Ticket, 
@@ -113,43 +113,64 @@ router.get('/movies', async (req, res) => {
     }
 });
 
+
+// Create movie with Cloudinary
 router.post('/movies', upload.single('movie_poster'), async (req, res) => {
     try {
+        console.log('=== STARTING MOVIE CREATION ===');
+        console.log('Movie title from form:', req.body.movie_title);
+        console.log('All form fields:', req.body);
+        console.log('File info:', req.file ? req.file : 'No file uploaded');
+        
+        // Check for duplicate movie title
+        if (req.body.movie_title) {
+            const existingMovie = await Movie.findOne({ 
+                where: { movie_title: req.body.movie_title } 
+            });
+            
+            console.log('Existing movie check result:', existingMovie ? `Found: ${existingMovie.movie_title}` : 'Not found');
+            
+            if (existingMovie) {
+                console.log('Duplicate detected!');
+                return res.status(400).json({ 
+                    message: `Movie "${req.body.movie_title}" already exists` 
+                });
+            }
+        } else {
+            console.log('ERROR: No movie title provided!');
+            return res.status(400).json({ message: 'Movie title is required' });
+        }
+        
         const movieData = { ...req.body };
         
         if (req.file) {
-            movieData.movie_poster = `/uploads/movies/${req.file.filename}`;
+            console.log('Setting poster to:', req.file.path);
+            movieData.movie_poster = req.file.path;
         }
 
+        console.log('Creating movie with data:', movieData);
         const movie = await Movie.create(movieData);
+        console.log('SUCCESS: Movie created with ID:', movie.movie_id);
         res.status(201).json(movie);
+        
     } catch (error) {
-        console.error('Error creating movie:', error);
+        console.error('=== ERROR IN MOVIE CREATION ===');
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Full error:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
 
-router.put('/movies/:id', upload.single('movie_poster'), async (req, res) => {
+// Get single movie by ID
+router.get('/movies/:id', async (req, res) => {
     try {
         const movie = await Movie.findByPk(req.params.id);
         if (!movie) {
             return res.status(404).json({ message: 'Movie not found' });
         }
-
-        const movieData = { ...req.body };
-        
-        if (req.file) {
-            movieData.movie_poster = `/uploads/movies/${req.file.filename}`;
-        } else if (req.body.movie_poster) {
-            movieData.movie_poster = req.body.movie_poster;
-        }
-
-        await movie.update(movieData);
-        
-        const updatedMovie = await Movie.findByPk(req.params.id);
-        res.json(updatedMovie);
+        res.json(movie);
     } catch (error) {
-        console.error('Error updating movie:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
@@ -194,11 +215,15 @@ router.post('/theaters', async (req, res) => {
 
         if (halls && halls.length > 0) {
             for (const hall of halls) {
-                await Hall.create({
+                // Create hall
+                const newHall = await Hall.create({
                     theater_id: theater.theater_id,
                     hall_number: hall.hall_number,
                     hall_capacity: parseInt(hall.capacity)
                 });
+                
+                // AUTO-GENERATE SEATS based on capacity
+                await generateSeatsForHall(newHall.hall_id, newHall.hall_capacity);
             }
         }
 
@@ -212,6 +237,30 @@ router.post('/theaters', async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
+
+// Helper function to generate seats for a hall
+const generateSeatsForHall = async (hallId, capacity) => {
+    const seats = [];
+    const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+    let seatCount = 0;
+    
+    for (const row of rows) {
+        for (let col = 1; col <= 10; col++) {
+            if (seatCount >= capacity) break;
+            seats.push({
+                hall_id: hallId,
+                seat_number: `${row}${col}`
+            });
+            seatCount++;
+        }
+        if (seatCount >= capacity) break;
+    }
+    
+    if (seats.length > 0) {
+        await Seat.bulkCreate(seats);
+        console.log(`Generated ${seats.length} seats for hall ${hallId}`);
+    }
+};
 
 router.put('/theaters/:id', async (req, res) => {
     try {
@@ -272,6 +321,18 @@ router.delete('/halls/:id', async (req, res) => {
         }
         await hall.destroy();
         res.json({ message: 'Hall deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+// Get all seats in a hall
+router.get('/halls/:hallId/seats', async (req, res) => {
+    try {
+        const seats = await Seat.findAll({
+            where: { hall_id: req.params.hallId },
+            order: [['seat_number', 'ASC']]
+        });
+        res.json(seats);
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
@@ -394,30 +455,39 @@ router.get('/bookings', async (req, res) => {
                     model: ShowSeat,
                     include: [{ model: Seat }]
                 },
-                { model: Payment },
                 { model: Ticket }
             ],
             order: [['booking_date', 'DESC']]
         });
 
-        const formattedBookings = bookings.map(booking => ({
-            booking_id: booking.booking_id,
-            booking_date: booking.booking_date,
-            user: booking.User,
-            movie: booking.Show?.Movie,
-            theater: booking.Show?.Hall?.Theater,
-            hall: booking.Show?.Hall,
-            show_date: booking.Show?.show_date,
-            show_time: booking.Show?.show_time,
-            seats: booking.ShowSeats?.map(ss => ss.Seat?.seat_number),
-            total_seats: booking.ShowSeats?.length,
-            payment: booking.Payment,
-            ticket: booking.Ticket,
-            status: booking.Payment?.payment_status || 'pending'
-        }));
+        console.log('Found bookings:', bookings.length);
+
+        const formattedBookings = bookings.map(booking => {
+            // Calculate total price from show ticket_price × number of seats
+            const seatCount = booking.ShowSeats?.length || 0;
+            const ticketPrice = booking.Show?.ticket_price || 0;
+            const totalPrice = seatCount * ticketPrice;
+            
+            return {
+                booking_id: booking.booking_id,
+                booking_date: booking.booking_date,
+                user: booking.User,
+                movie: booking.Show?.Movie,
+                theater: booking.Show?.Hall?.Theater,
+                hall: booking.Show?.Hall,
+                show_date: booking.Show?.show_date,
+                show_time: booking.Show?.show_time,
+                seats: booking.ShowSeats?.map(ss => ss.Seat?.seat_number),
+                total_seats: seatCount,
+                total_price: totalPrice,
+                ticket: booking.Ticket,
+                status: 'confirmed'
+            };
+        });
 
         res.json(formattedBookings);
     } catch (error) {
+        console.error('Error fetching bookings:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });

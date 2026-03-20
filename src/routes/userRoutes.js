@@ -1,8 +1,26 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const { Booking, Show, Movie, Theater, Hall, Seat, ShowSeat, Payment } = require('../models');
+const { User, Booking, Show, Movie, Theater, Hall, Seat, ShowSeat, Payment, Ticket } = require('../models');
 const { Op } = require('sequelize');
+
+// Get user profile
+router.get('/profile', auth, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.user_id, {
+      attributes: ['user_id', 'user_name', 'user_email', 'user_phone', 'user_dob', 'user_reg_date']
+    });
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 // Get user's bookings
 router.get('/bookings', auth, async (req, res) => {
@@ -24,7 +42,7 @@ router.get('/bookings', auth, async (req, res) => {
                     model: ShowSeat,
                     include: [{ model: Seat }]
                 },
-                { model: Payment }
+                { model: Ticket }
             ],
             order: [['booking_date', 'DESC']]
         });
@@ -37,8 +55,8 @@ router.get('/bookings', auth, async (req, res) => {
             seats: booking.ShowSeats?.map(ss => ss.Seat?.seat_number).join(', '),
             date: booking.Show?.show_date,
             time: booking.Show?.show_time,
-            total: booking.Payment?.payment_amount || 0,
-            status: booking.Payment?.payment_status || 'pending'
+            total: booking.ShowSeats?.length * (booking.Show?.ticket_price || 0),
+            status: 'confirmed'
         }));
 
         res.json(formattedBookings);
@@ -79,7 +97,7 @@ router.get('/bookings/recent', auth, async (req, res) => {
             theater: booking.Show?.Hall?.Theater?.theater_name,
             seats: booking.ShowSeats?.map(ss => ss.Seat?.seat_number).join(', '),
             date: booking.Show?.show_date,
-            total: booking.Payment?.payment_amount || 0
+            total: booking.ShowSeats?.length * (booking.Show?.ticket_price || 0)
         }));
 
         res.json(formattedBookings);

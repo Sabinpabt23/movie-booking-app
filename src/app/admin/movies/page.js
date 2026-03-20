@@ -1,8 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import Image from 'next/image';
 
 export default function AdminMovies() {
   const router = useRouter();
@@ -62,64 +60,79 @@ export default function AdminMovies() {
     }
   };
 
-  const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    const token = localStorage.getItem('adminToken');
-    const url = editingMovie 
-      ? `http://localhost:5000/api/admin/movies/${editingMovie.movie_id}`
-      : 'http://localhost:5000/api/admin/movies';
+const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log('=== FORM SUBMITTED ===');
+    console.log('Form data:', formData);
+    console.log('Selected file:', selectedFile);
     
-    // Create FormData for file upload
-    const formDataToSend = new FormData();
-    formDataToSend.append('movie_title', formData.movie_title);
-    formDataToSend.append('movie_description', formData.movie_description);
-    formDataToSend.append('movie_duration', formData.movie_duration);
-    formDataToSend.append('movie_genre', formData.movie_genre);
-    formDataToSend.append('movie_rating', formData.movie_rating);
-    formDataToSend.append('movie_release_date', formData.movie_release_date);
-    formDataToSend.append('movie_language', formData.movie_language);
-    
-    // Always send the file if selected, even in edit mode
-    if (selectedFile) {
-      formDataToSend.append('movie_poster', selectedFile);
-      console.log('Uploading new file:', selectedFile.name);
-    } else if (editingMovie && formData.movie_poster && !selectedFile) {
-      // If editing and no new file, send the existing poster path
-      formDataToSend.append('movie_poster', formData.movie_poster);
-      console.log('Keeping existing poster:', formData.movie_poster);
+    try {
+        const token = localStorage.getItem('adminToken');
+        console.log('Token exists?', token ? 'Yes' : 'No');
+        
+        const url = editingMovie 
+            ? `http://localhost:5000/api/admin/movies/${editingMovie.movie_id}`
+            : 'http://localhost:5000/api/admin/movies';
+        
+        console.log('URL:', url);
+        
+        const formDataToSend = new FormData();
+        formDataToSend.append('movie_title', formData.movie_title);
+        formDataToSend.append('movie_description', formData.movie_description);
+        formDataToSend.append('movie_duration', formData.movie_duration);
+        formDataToSend.append('movie_genre', formData.movie_genre);
+        formDataToSend.append('movie_rating', formData.movie_rating);
+        formDataToSend.append('movie_release_date', formData.movie_release_date);
+        formDataToSend.append('movie_language', formData.movie_language);
+        
+        if (selectedFile) {
+            console.log('Appending file:', selectedFile.name);
+            formDataToSend.append('movie_poster', selectedFile);
+        }
+        
+        console.log('Sending request...');
+        const response = await fetch(url, {
+            method: editingMovie ? 'PUT' : 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formDataToSend
+        });
+        
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        // Get response text
+        const responseText = await response.text();
+        console.log('Raw response text:', responseText);
+        
+        // Try to parse JSON
+        let result;
+        try {
+            result = JSON.parse(responseText);
+            console.log('Parsed JSON:', result);
+        } catch (e) {
+            console.error('Failed to parse JSON:', e);
+            result = { message: responseText || 'Unknown error' };
+        }
+        
+        if (response.ok) {
+            console.log('Success!');
+            resetForm();
+            fetchMovies();
+            alert('Movie saved successfully!');
+        } else {
+            // Show the error message from backend
+            const errorMessage = result.message || 'Failed to save movie. Please try again.';
+            console.log('Error message:', errorMessage);
+            console.log('Save failed:', result);
+            window.alert(errorMessage);
+        }
+    } catch (error) {
+        console.error('Network error:', error);
+        alert('Network error. Please check your connection.');
     }
-    
-    // Log FormData contents for debugging
-    for (let pair of formDataToSend.entries()) {
-      console.log(pair[0] + ': ' + pair[1]);
-    }
-    
-    const response = await fetch(url, {
-      method: editingMovie ? 'PUT' : 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-        // Don't set Content-Type - browser will set it with boundary for FormData
-      },
-      body: formDataToSend
-    });
-    
-    if (response.ok) {
-      const result = await response.json();
-      console.log('Save successful:', result);
-      resetForm();
-      fetchMovies();
-    } else {
-      const error = await response.text();
-      console.error('Save failed:', error);
-      alert('Failed to save movie. Check console for details.');
-    }
-  } catch (error) {
-    console.error('Error saving movie:', error);
-    alert('Error saving movie: ' + error.message);
-  }
 };
-
  const handleEdit = (movie) => {
   setEditingMovie(movie);
   setFormData({
@@ -133,7 +146,7 @@ export default function AdminMovies() {
     movie_language: movie.movie_language || ''
   });
   // Set preview URL from existing poster
-  setPreviewUrl(movie.movie_poster ? `http://localhost:5000${movie.movie_poster}` : '');
+setPreviewUrl(movie.movie_poster || '');
   setSelectedFile(null); // Reset file selection
   setShowForm(true);
 };
@@ -342,15 +355,15 @@ export default function AdminMovies() {
                   <td style={{ padding: '1rem' }}>{movie.movie_id}</td>
                   <td style={{ padding: '1rem' }}>
                     {movie.movie_poster ? (
-                      <img 
-                        src={`http://localhost:5000${movie.movie_poster}`} 
-                        alt={movie.movie_title}
-                        style={{ width: '50px', height: '70px', objectFit: 'cover', borderRadius: '4px' }}
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = '/images/placeholder.jpg';
-                        }}
-                      />
+                     <img 
+    src={movie.movie_poster} 
+    alt={movie.movie_title}
+    style={{ width: '50px', height: '70px', objectFit: 'cover', borderRadius: '4px' }}
+    onError={(e) => {
+        e.target.onerror = null;
+        e.target.src = '/images/placeholder.jpg';
+    }}
+/>
                     ) : (
                       <div style={{ width: '50px', height: '70px', background: '#f3f4f6', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: '#9ca3af' }}>
                         No img
