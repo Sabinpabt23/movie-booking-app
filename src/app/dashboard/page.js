@@ -18,24 +18,36 @@ export default function DashboardHome() {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
-    try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      
-      // Fetch movies
-      const moviesRes = await fetch(`${API_URL}/api/admin/movies`);
-      const moviesData = await moviesRes.json();
-      
-      // Fetch shows to get prices
-      const showsRes = await fetch(`${API_URL}/api/admin/shows`);
-      const showsData = await showsRes.json();
+const fetchData = async () => {
+  try {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    
+    // Fetch movies
+    const moviesRes = await fetch(`${API_URL}/api/admin/movies`);
+    const moviesData = await moviesRes.json();
+    
+    // Fetch shows to get prices
+    const showsRes = await fetch(`${API_URL}/api/admin/shows`);
+    let showsData = [];
+    
+    // Check if response is valid
+    if (showsRes.ok) {
+      const data = await showsRes.json();
+      showsData = Array.isArray(data) ? data : [];
+    } else {
+      console.error('Failed to fetch shows:', showsRes.status);
+    }
 
-      // Fetch theaters
-      const theatersRes = await fetch(`${API_URL}/api/admin/theaters`);
-      const theatersData = await theatersRes.json();
+    // Fetch theaters
+    const theatersRes = await fetch(`${API_URL}/api/admin/theaters`);
+    let theatersData = [];
+    if (theatersRes.ok) {
+      theatersData = await theatersRes.json();
+    }
 
-      // Create a map of movie prices (lowest price for each movie)
-      const moviePrices = {};
+    // Create a map of movie prices (lowest price for each movie)
+    const moviePrices = {};
+    if (Array.isArray(showsData) && showsData.length > 0) {
       showsData.forEach(show => {
         const movieId = show.movie_id;
         const price = show.ticket_price;
@@ -43,32 +55,33 @@ export default function DashboardHome() {
           moviePrices[movieId] = price;
         }
       });
-
-      // Attach prices to movies
-      const moviesWithPrices = moviesData.map(movie => ({
-        ...movie,
-        ticket_price: moviePrices[movie.movie_id] || 'N/A'
-      }));
-      
-      setMovies(moviesWithPrices);
-      setTheaters(theatersData);
-
-      const token = localStorage.getItem('token');
-      if (token) {
-        const bookingsRes = await fetch(`${API_URL}/api/user/bookings/recent`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (bookingsRes.ok) {
-          const bookingsData = await bookingsRes.json();
-          setRecentBookings(bookingsData);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setLoading(false);
     }
-  };
+
+    // Attach prices to movies
+    const moviesWithPrices = Array.isArray(moviesData) ? moviesData.map(movie => ({
+      ...movie,
+      ticket_price: moviePrices[movie.movie_id] || 'N/A'
+    })) : [];
+    
+    setMovies(moviesWithPrices);
+    setTheaters(Array.isArray(theatersData) ? theatersData : []);
+
+    const token = localStorage.getItem('token');
+    if (token) {
+      const bookingsRes = await fetch(`${API_URL}/api/user/bookings/recent`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (bookingsRes.ok) {
+        const bookingsData = await bookingsRes.json();
+        setRecentBookings(Array.isArray(bookingsData) ? bookingsData : []);
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const getTotalSeats = (theater) => {
     return theater.Halls?.reduce((sum, hall) => sum + hall.hall_capacity, 0) || 0;
