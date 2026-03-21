@@ -12,38 +12,40 @@ export default function MoviesPage() {
   }, []);
 
   const fetchMovies = async () => {
-    try {
-      // Fetch movies
-      const moviesRes = await fetch('http://localhost:5000/api/admin/movies');
-      const moviesData = await moviesRes.json();
+  try {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    
+    // Fetch movies
+    const moviesRes = await fetch(`${API_URL}/api/admin/movies`);
+    const moviesData = await moviesRes.json();
 
-      // Fetch shows to get real prices
-      const showsRes = await fetch('http://localhost:5000/api/admin/shows');
-      const showsData = await showsRes.json();
+    // Fetch shows to get real prices
+    const showsRes = await fetch(`${API_URL}/api/admin/shows`);
+    const showsData = await showsRes.json();
 
-      // Create a map of movie prices (lowest price for each movie)
-      const moviePrices = {};
-      showsData.forEach(show => {
-        const movieId = show.movie_id;
-        const price = show.ticket_price;
-        if (!moviePrices[movieId] || price < moviePrices[movieId]) {
-          moviePrices[movieId] = price;
-        }
-      });
+    // Create a map of movie prices (lowest price for each movie)
+    const moviePrices = {};
+    showsData.forEach(show => {
+      const movieId = show.movie_id;
+      const price = show.ticket_price;
+      if (!moviePrices[movieId] || price < moviePrices[movieId]) {
+        moviePrices[movieId] = price;
+      }
+    });
 
-      // Attach prices to movies
-      const moviesWithPrices = moviesData.map(movie => ({
-        ...movie,
-        ticket_price: moviePrices[movie.movie_id] || 'N/A'
-      }));
+    // Attach prices to movies
+    const moviesWithPrices = moviesData.map(movie => ({
+      ...movie,
+      ticket_price: moviePrices[movie.movie_id] || 'N/A'
+    }));
 
-      setMovies(moviesWithPrices);
-    } catch (error) {
-      console.error('Error fetching movies:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setMovies(moviesWithPrices);
+  } catch (error) {
+    console.error('Error fetching movies:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (loading) {
     return (

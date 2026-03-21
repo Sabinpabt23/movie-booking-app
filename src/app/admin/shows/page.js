@@ -28,8 +28,9 @@ export default function AdminShows() {
 
   const fetchShows = async () => {
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('http://localhost:5000/api/admin/shows', {
+      const response = await fetch(`${API_URL}/api/admin/shows`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -43,8 +44,9 @@ export default function AdminShows() {
 
   const fetchMovies = async () => {
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('http://localhost:5000/api/admin/movies', {
+      const response = await fetch(`${API_URL}/api/admin/movies`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -56,8 +58,9 @@ export default function AdminShows() {
 
   const fetchTheaters = async () => {
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('http://localhost:5000/api/admin/theaters', {
+      const response = await fetch(`${API_URL}/api/admin/theaters`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -90,10 +93,11 @@ export default function AdminShows() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const token = localStorage.getItem('adminToken');
       const url = editingShow 
-        ? `http://localhost:5000/api/admin/shows/${editingShow.show_id}`
-        : 'http://localhost:5000/api/admin/shows';
+        ? `${API_URL}/api/admin/shows/${editingShow.show_id}`
+        : `${API_URL}/api/admin/shows`;
       
       const response = await fetch(url, {
         method: editingShow ? 'PUT' : 'POST',
@@ -138,8 +142,9 @@ export default function AdminShows() {
     if (!confirm('Are you sure you want to delete this show?')) return;
     
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`http://localhost:5000/api/admin/shows/${id}`, {
+      const response = await fetch(`${API_URL}/api/admin/shows/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

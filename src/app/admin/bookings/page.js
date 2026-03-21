@@ -15,8 +15,9 @@ export default function AdminBookings() {
 
   const fetchBookings = async () => {
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('http://localhost:5000/api/admin/bookings', {
+      const response = await fetch(`${API_URL}/api/admin/bookings`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();

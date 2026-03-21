@@ -19,8 +19,10 @@ export default function BookingPage() {
 
   const fetchShowData = async () => {
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      
       // Fetch show details
-      const showsRes = await fetch('http://localhost:5000/api/admin/shows');
+      const showsRes = await fetch(`${API_URL}/api/admin/shows`);
       const showsData = await showsRes.json();
       const showData = showsData.find(s => s.show_id === parseInt(showId));
       
@@ -28,12 +30,12 @@ export default function BookingPage() {
         setShow(showData);
         
         // Fetch seats for this hall
-        const seatsRes = await fetch(`http://localhost:5000/api/admin/halls/${showData.hall_id}/seats`);
+        const seatsRes = await fetch(`${API_URL}/api/admin/halls/${showData.hall_id}/seats`);
         if (seatsRes.ok) {
           const seatsData = await seatsRes.json();
           
           // Fetch booked seats for this show
-          const bookedSeatsRes = await fetch(`http://localhost:5000/api/shows/${showId}/booked-seats`);
+          const bookedSeatsRes = await fetch(`${API_URL}/api/shows/${showId}/booked-seats`);
           const bookedSeats = bookedSeatsRes.ok ? await bookedSeatsRes.json() : [];
           
           // Mark seats as booked
@@ -66,37 +68,37 @@ export default function BookingPage() {
   };
 
   const handleConfirmBooking = async () => {
-  if (selectedSeats.length === 0) {
-    alert('Please select at least one seat');
-    return;
-  }
-
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch('http://localhost:5000/api/bookings', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        show_id: parseInt(showId),
-        seat_ids: selectedSeats.map(s => s.seat_id)
-      })
-    });
-
-    if (response.ok) {
-      // Redirect to My Bookings page instead of confirmation page
-      router.push('/dashboard/bookings');
-    } else {
-      const error = await response.json();
-      alert(error.message || 'Booking failed. Please try again.');
+    if (selectedSeats.length === 0) {
+      alert('Please select at least one seat');
+      return;
     }
-  } catch (error) {
-    console.error('Error creating booking:', error);
-    alert('Server error. Please try again.');
-  }
-};
+
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/bookings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          show_id: parseInt(showId),
+          seat_ids: selectedSeats.map(s => s.seat_id)
+        })
+      });
+
+      if (response.ok) {
+        router.push('/dashboard/bookings');
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Booking failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      alert('Server error. Please try again.');
+    }
+  };
 
   const formatTime = (time) => {
     if (!time) return '';

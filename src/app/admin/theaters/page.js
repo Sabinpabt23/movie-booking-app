@@ -20,8 +20,9 @@ export default function AdminTheaters() {
 
   const fetchTheaters = async () => {
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('http://localhost:5000/api/admin/theaters', {
+      const response = await fetch(`${API_URL}/api/admin/theaters`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -63,10 +64,11 @@ export default function AdminTheaters() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const token = localStorage.getItem('adminToken');
       const url = editingTheater 
-        ? `http://localhost:5000/api/admin/theaters/${editingTheater.theater_id}`
-        : 'http://localhost:5000/api/admin/theaters';
+        ? `${API_URL}/api/admin/theaters/${editingTheater.theater_id}`
+        : `${API_URL}/api/admin/theaters`;
       
       const response = await fetch(url, {
         method: editingTheater ? 'PUT' : 'POST',
@@ -103,8 +105,9 @@ export default function AdminTheaters() {
     if (!confirm('Are you sure you want to delete this theater?')) return;
     
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`http://localhost:5000/api/admin/theaters/${id}`, {
+      const response = await fetch(`${API_URL}/api/admin/theaters/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -121,8 +124,9 @@ export default function AdminTheaters() {
     if (!confirm('Are you sure you want to delete this hall?')) return;
     
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`http://localhost:5000/api/admin/halls/${hallId}`, {
+      const response = await fetch(`${API_URL}/api/admin/halls/${hallId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

@@ -24,7 +24,8 @@ export default function AdminLoginPage() {
         setError('');
 
         try {
-            const response = await fetch('http://localhost:5000/api/admin/auth/login', {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const response = await fetch(`${API_URL}/api/admin/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -35,7 +36,7 @@ export default function AdminLoginPage() {
             const data = await response.json();
 
             if (response.ok) {
-                // Store admin token separately
+                // Store admin token and data
                 localStorage.setItem('adminToken', data.token);
                 localStorage.setItem('admin', JSON.stringify(data.admin));
                 router.push('/admin');
@@ -103,12 +104,6 @@ export default function AdminLoginPage() {
                             {loading ? 'Logging in...' : 'Login to Admin Panel'}
                         </button>
                     </form>
-
-                    <div className="mt-6 text-center">
-                        <p className="text-sm text-gray-500">
-                            Secure admin access only
-                        </p>
-                    </div>
                 </div>
             </div>
         </div>

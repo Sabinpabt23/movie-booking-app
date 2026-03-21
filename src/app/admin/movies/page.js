@@ -27,8 +27,9 @@ export default function AdminMovies() {
 
   const fetchMovies = async () => {
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('http://localhost:5000/api/admin/movies', {
+      const response = await fetch(`${API_URL}/api/admin/movies`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -67,12 +68,13 @@ const handleSubmit = async (e) => {
     console.log('Selected file:', selectedFile);
     
     try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
         const token = localStorage.getItem('adminToken');
         console.log('Token exists?', token ? 'Yes' : 'No');
         
         const url = editingMovie 
-            ? `http://localhost:5000/api/admin/movies/${editingMovie.movie_id}`
-            : 'http://localhost:5000/api/admin/movies';
+            ? `${API_URL}/api/admin/movies/${editingMovie.movie_id}`
+            : `${API_URL}/api/admin/movies`;
         
         console.log('URL:', url);
         
@@ -155,8 +157,9 @@ setPreviewUrl(movie.movie_poster || '');
     if (!confirm('Are you sure you want to delete this movie?')) return;
     
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`http://localhost:5000/api/admin/movies/${id}`, {
+      const response = await fetch(`${API_URL}/api/admin/movies/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

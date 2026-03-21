@@ -1,10 +1,62 @@
 'use client';
+import { useEffect, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import './admin.css';  // This imports the CSS file
+import './admin.css';
 
 export default function AdminLayout({ children }) {
+  const router = useRouter();
   const pathname = usePathname();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check if we're on login page
+    if (pathname === '/admin/login') {
+      setLoading(false);
+      return;
+    }
+
+    // Check admin authentication
+    const token = localStorage.getItem('adminToken');
+    const admin = localStorage.getItem('admin');
+    
+    console.log('Admin check - token exists:', !!token);
+    console.log('Admin check - admin exists:', !!admin);
+    console.log('Current path:', pathname);
+    
+    if (!token || !admin) {
+      console.log('No admin token, redirecting to login');
+      router.replace('/admin/login');
+      return;
+    }
+    
+    setLoading(false);
+  }, [pathname, router]);
+
+  // If on login page, just show login content
+  if (pathname === '/admin/login') {
+    return children;
+  }
+
+  // Show loading
+  if (loading) {
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center' 
+      }}>
+        <div className="spinner"></div>
+      </div>
+    );
+  }
+
+  // Check if user is authenticated
+  const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+  if (!token && pathname !== '/admin/login') {
+    return null; // Will redirect in useEffect
+  }
 
   const navItems = [
     { path: '/admin', icon: '📊', label: 'Dashboard' },
@@ -15,97 +67,57 @@ export default function AdminLayout({ children }) {
     { path: '/admin/messages', icon: '✉️', label: 'Messages' },
   ];
 
-  // Inline styles for the layout structure
-  const layoutStyles = {
-    container: {
-      display: 'flex',
-      minHeight: '100vh',
-      background: '#f3f4f6'
-    },
-    sidebar: {
-      width: '260px',
-      background: 'white',
-      boxShadow: '2px 0 5px rgba(0, 0, 0, 0.05)',
-      position: 'fixed',
-      height: '100vh',
-      overflowY: 'auto'
-    },
-    sidebarHeader: {
-      padding: '1.5rem',
-      borderBottom: '1px solid #f0f0f0'
-    },
-    sidebarHeaderTitle: {
-      fontSize: '1.3rem',
-      fontWeight: 'bold',
-      color: '#f97315'
-    },
-    main: {
-      flex: 1,
-      marginLeft: '260px',
-      padding: '2rem'
-    }
-  };
+const handleLogout = () => {
+  console.log('Admin logging out...');
+  
+  // Clear storage
+  localStorage.removeItem('adminToken');
+  localStorage.removeItem('admin');
+  
+  console.log('After logout - adminToken:', localStorage.getItem('adminToken'));
+  console.log('After logout - admin:', localStorage.getItem('admin'));
+  
+  // Force a full page reload to clear any cached state
+  window.location.href = '/admin/login';
+};
 
   return (
-    <div style={layoutStyles.container}>
+    <div className="admin-container">
       {/* Sidebar */}
-      <div style={layoutStyles.sidebar}>
-        <div style={layoutStyles.sidebarHeader}>
-          <h2 style={layoutStyles.sidebarHeaderTitle}>🎬 Admin Panel</h2>
+      <div className="admin-sidebar">
+        <div className="admin-sidebar-header">
+          <h2>🎬 Admin Panel</h2>
           <p style={{ fontSize: '0.8rem', color: '#9ca3af' }}>Sabin Booking</p>
         </div>
-        <nav style={{ padding: '1.5rem 0' }}>
+        <nav className="admin-sidebar-nav">
           {navItems.map((item) => (
             <Link
               key={item.path}
               href={item.path}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.75rem 1.5rem',
-                color: pathname === item.path ? '#f97315' : '#6b7280',
-                background: pathname === item.path ? '#fff6e9' : 'transparent',
-                borderLeft: pathname === item.path ? '3px solid #f97315' : '3px solid transparent',
-                textDecoration: 'none',
-                transition: 'all 0.3s ease'
-              }}
+              className={`admin-nav-item ${pathname === item.path ? 'active' : ''}`}
             >
-              <span style={{ fontSize: '1.2rem' }}>{item.icon}</span>
+              <span className="admin-nav-icon">{item.icon}</span>
               {item.label}
             </Link>
           ))}
+          <button 
+            onClick={handleLogout}
+            className="admin-nav-item"
+            style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
+          >
+            <span className="admin-nav-icon">🚪</span>
+            Logout
+          </button>
         </nav>
       </div>
 
       {/* Main Content */}
-      <div style={layoutStyles.main}>
-        <div style={{
-          background: 'white',
-          padding: '1rem 2rem',
-          borderRadius: '12px',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02)',
-          marginBottom: '2rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1f2937' }}>
-            {navItems.find(item => item.path === pathname)?.label || 'Dashboard'}
-          </h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <div className="admin-main">
+        <div className="admin-header">
+          <h1>{navItems.find(item => item.path === pathname)?.label || 'Dashboard'}</h1>
+          <div className="admin-user">
             <span>Admin</span>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              background: '#f97315',
-              color: 'white',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 'bold'
-            }}>A</div>
+            <div className="admin-user-avatar">A</div>
           </div>
         </div>
         {children}

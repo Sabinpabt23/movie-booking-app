@@ -7,40 +7,78 @@ import './dashboard.css';
 export default function DashboardLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
+    // Check user authentication
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
-
+    
+    console.log('User check - token exists:', !!token);
+    console.log('User check - userData exists:', !!userData);
+    
     if (!token || !userData) {
-      router.push('/login');
+      console.log('No user token, redirecting to login');
+      router.replace('/login');
       return;
     }
-
+    
     setUser(JSON.parse(userData));
-  }, []);
+    setLoading(false);
+  }, [router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    router.push('/login');
-  };
+  // Show loading spinner
+  if (loading) {
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        background: '#f3f4f6'
+      }}>
+        <div style={{
+          width: '50px',
+          height: '50px',
+          border: '3px solid #f3f3f3',
+          borderTop: '3px solid #f97315',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }}></div>
+        <style jsx>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // Check if user is authenticated
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  if (!token) {
+    return null; // Will redirect in useEffect
+  }
+
+const handleLogout = () => {
+  console.log('User logging out...');
+  
+  // Clear storage
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  
+  console.log('After logout - token:', localStorage.getItem('token'));
+  console.log('After logout - user:', localStorage.getItem('user'));
+  
+  // Force a full page reload to clear any cached state
+  window.location.href = '/login';
+};
 
   const isActive = (path) => {
     return pathname === path;
   };
-
-  if (!user) {
-    return (
-      <div className="loading-container">
-        <div className="text-center">
-          <div className="spinner"></div>
-          <p style={{ color: '#6b7280' }}>Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="dashboard-container">
@@ -54,7 +92,7 @@ export default function DashboardLayout({ children }) {
             <div className="user-section">
               <Link href="/dashboard/profile" className="profile-link">
                 <div className="profile-avatar">
-                  {user.user_name?.charAt(0).toUpperCase()}
+                  {user?.user_name?.charAt(0).toUpperCase()}
                 </div>
                 <span>Profile</span>
               </Link>

@@ -16,8 +16,9 @@ export default function AdminMessages() {
 
   const fetchMessages = async () => {
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('http://localhost:5000/api/admin/messages', {
+      const response = await fetch(`${API_URL}/api/admin/messages`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -31,8 +32,9 @@ export default function AdminMessages() {
 
   const markAsRead = async (id) => {
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`http://localhost:5000/api/admin/messages/${id}/read`, {
+      const response = await fetch(`${API_URL}/api/admin/messages/${id}/read`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -50,12 +52,13 @@ export default function AdminMessages() {
     }
   };
 
-  const deleteMessage = async (id) => {
+const deleteMessage = async (id) => {
     if (!confirm('Are you sure you want to delete this message?')) return;
     
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`http://localhost:5000/api/admin/messages/${id}`, {
+      const response = await fetch(`${API_URL}/api/admin/messages/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

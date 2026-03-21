@@ -14,10 +14,11 @@ export default function ConfirmationPage() {
     fetchBookingDetails();
   }, [bookingId]);
 
-  const fetchBookingDetails = async () => {
+const fetchBookingDetails = async () => {
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/bookings/${bookingId}`, {
+      const response = await fetch(`${API_URL}/api/bookings/${bookingId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 

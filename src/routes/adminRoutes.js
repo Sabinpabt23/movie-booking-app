@@ -113,6 +113,31 @@ router.get('/movies', async (req, res) => {
     }
 });
 
+router.put('/movies/:id', upload.single('movie_poster'), async (req, res) => {
+    try {
+        const movie = await Movie.findByPk(req.params.id);
+        if (!movie) {
+            return res.status(404).json({ message: 'Movie not found' });
+        }
+
+        const movieData = { ...req.body };
+        
+        // If new file was uploaded, update the path
+        if (req.file) {
+            movieData.movie_poster = req.file.path;
+        } else if (req.body.movie_poster) {
+            movieData.movie_poster = req.body.movie_poster;
+        }
+
+        await movie.update(movieData);
+        
+        const updatedMovie = await Movie.findByPk(req.params.id);
+        res.json(updatedMovie);
+    } catch (error) {
+        console.error('Error updating movie:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
 
 // Create movie with Cloudinary
 router.post('/movies', upload.single('movie_poster'), async (req, res) => {

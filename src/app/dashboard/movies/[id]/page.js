@@ -15,69 +15,71 @@ export default function MovieDetailPage() {
     fetchMovieData();
   }, [id]);
 
-  const fetchMovieData = async () => {
-    try {
-      // Fetch movie details
-      const movieRes = await fetch(`http://localhost:5000/api/admin/movies/${id}`);
-      const movieData = await movieRes.json();
-      setMovie(movieData);
+const fetchMovieData = async () => {
+  try {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    
+    // Fetch movie details
+    const movieRes = await fetch(`${API_URL}/api/admin/movies/${id}`);
+    const movieData = await movieRes.json();
+    setMovie(movieData);
 
-      // Fetch all shows for this movie
-      const showsRes = await fetch('http://localhost:5000/api/admin/shows');
-      const showsData = await showsRes.json();
+    // Fetch all shows for this movie
+    const showsRes = await fetch(`${API_URL}/api/admin/shows`);
+    const showsData = await showsRes.json();
 
-      // Filter shows for this movie
-      const movieShows = showsData.filter(show => show.movie_id === parseInt(id));
+    // Filter shows for this movie
+    const movieShows = showsData.filter(show => show.movie_id === parseInt(id));
 
-      // Group shows by theater
-      const theatersMap = new Map();
-      movieShows.forEach(show => {
-        const theater = show.Hall?.Theater;
-        const hall = show.Hall;
-        
-        if (theater && hall) {
-          if (!theatersMap.has(theater.theater_id)) {
-            theatersMap.set(theater.theater_id, {
-              id: theater.theater_id,
-              name: theater.theater_name,
-              location: theater.theater_location,
-              halls: new Map()
-            });
-          }
-          
-          const theaterData = theatersMap.get(theater.theater_id);
-          
-          if (!theaterData.halls.has(hall.hall_id)) {
-            theaterData.halls.set(hall.hall_id, {
-              id: hall.hall_id,
-              number: hall.hall_number,
-              capacity: hall.hall_capacity,
-              shows: []
-            });
-          }
-          
-          theaterData.halls.get(hall.hall_id).shows.push({
-            id: show.show_id,
-            time: show.show_time,
-            date: show.show_date,
-            price: show.ticket_price
+    // Group shows by theater
+    const theatersMap = new Map();
+    movieShows.forEach(show => {
+      const theater = show.Hall?.Theater;
+      const hall = show.Hall;
+      
+      if (theater && hall) {
+        if (!theatersMap.has(theater.theater_id)) {
+          theatersMap.set(theater.theater_id, {
+            id: theater.theater_id,
+            name: theater.theater_name,
+            location: theater.theater_location,
+            halls: new Map()
           });
         }
-      });
+        
+        const theaterData = theatersMap.get(theater.theater_id);
+        
+        if (!theaterData.halls.has(hall.hall_id)) {
+          theaterData.halls.set(hall.hall_id, {
+            id: hall.hall_id,
+            number: hall.hall_number,
+            capacity: hall.hall_capacity,
+            shows: []
+          });
+        }
+        
+        theaterData.halls.get(hall.hall_id).shows.push({
+          id: show.show_id,
+          time: show.show_time,
+          date: show.show_date,
+          price: show.ticket_price
+        });
+      }
+    });
 
-      // Convert to array format for rendering
-      const theatersArray = Array.from(theatersMap.values()).map(theater => ({
-        ...theater,
-        halls: Array.from(theater.halls.values())
-      }));
+    // Convert to array format for rendering
+    const theatersArray = Array.from(theatersMap.values()).map(theater => ({
+      ...theater,
+      halls: Array.from(theater.halls.values())
+    }));
 
-      setTheaters(theatersArray);
-    } catch (error) {
-      console.error('Error fetching movie data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setTheaters(theatersArray);
+  } catch (error) {
+    console.error('Error fetching movie data:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const formatTime = (time) => {
     if (!time) return '';
