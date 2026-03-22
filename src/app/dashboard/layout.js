@@ -16,38 +16,50 @@ export default function DashboardLayout({ children }) {
 
   const checkUserAuth = async () => {
     try {
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        router.replace('/login');
-        return;
-      }
+        const token = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+        
+        if (!token || !storedUser) {
+            window.location.href = '/login';
+            return;
+        }
 
-      // Fetch fresh user data
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${API_URL}/api/user/profile`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+        // Parse stored user
+        const parsedStoredUser = JSON.parse(storedUser);
+        
+        // Fetch fresh user data
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const response = await fetch(`${API_URL}/api/user/profile`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-        // Update localStorage
-        localStorage.setItem('user', JSON.stringify(userData));
-      } else {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        router.replace('/login');
-        return;
-      }
+        if (response.ok) {
+            const freshUserData = await response.json();
+            
+            // Check if the fetched user matches the stored user
+            if (freshUserData.user_id !== parsedStoredUser.user_id) {
+                console.log('User mismatch, clearing storage');
+                localStorage.clear();
+                window.location.href = '/login';
+                return;
+            }
+            
+            setUser(freshUserData);
+            // Update localStorage with fresh data
+            localStorage.setItem('user', JSON.stringify(freshUserData));
+        } else {
+            localStorage.clear();
+            window.location.href = '/login';
+            return;
+        }
     } catch (error) {
-      console.error('Auth error:', error);
-      router.replace('/login');
+        console.error('Auth error:', error);
+        localStorage.clear();
+        window.location.href = '/login';
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
-
+};
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');

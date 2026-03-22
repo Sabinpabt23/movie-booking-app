@@ -36,13 +36,16 @@ const handleSubmit = async (e) => {
         const data = await response.json();
 
         if (response.ok) {
-            // Clear old data first
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            // COMPLETELY CLEAR all storage
+            localStorage.clear();
+            sessionStorage.clear();
+            
             // Set new data
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
-            router.push('/dashboard');
+            
+            // Force a hard navigation to dashboard
+            window.location.href = '/dashboard';
         } else {
             setError(data.message || 'Login failed');
         }
