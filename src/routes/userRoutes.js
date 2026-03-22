@@ -97,7 +97,7 @@ router.get('/bookings/recent', auth, async (req, res) => {
             theater: booking.Show?.Hall?.Theater?.theater_name,
             seats: booking.ShowSeats?.map(ss => ss.Seat?.seat_number).join(', '),
             date: booking.Show?.show_date,
-            total: booking.ShowSeats?.length * (booking.Show?.ticket_price || 0)
+            total: booking.total_price || 0  // Change this line
         }));
 
         res.json(formattedBookings);
