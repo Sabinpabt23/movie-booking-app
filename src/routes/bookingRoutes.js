@@ -44,7 +44,7 @@ router.post('/', auth, async (req, res) => {
       user_id,
       show_id,
       booking_date: new Date(),
-      total_price: totalPrice  // Add this line
+      total_price: totalPrice  // <-- ADD THIS LINE
     });
 
     // Update show_seat status and link to booking

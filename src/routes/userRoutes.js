@@ -55,7 +55,7 @@ router.get('/bookings', auth, async (req, res) => {
             seats: booking.ShowSeats?.map(ss => ss.Seat?.seat_number).join(', '),
             date: booking.Show?.show_date,
             time: booking.Show?.show_time,
-            total: booking.ShowSeats?.length * (booking.Show?.ticket_price || 0),
+            total: booking.total_price || 0,  // Use stored total_price
             status: 'confirmed'
         }));
 
