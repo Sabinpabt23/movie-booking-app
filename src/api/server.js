@@ -7,7 +7,7 @@ const adminRoutes = require('../routes/adminRoutes');
 const adminAuthRoutes = require('../routes/adminAuthRoutes');
 const userRoutes = require('../routes/userRoutes');
 const bookingRoutes = require('../routes/bookingRoutes');
-const sequelize = require('../config/database');  // Add this line
+const sequelize = require('../config/database');
 
 const path = require('path');
 
@@ -24,12 +24,11 @@ app.use(cors({
 
 app.use(express.json());
 
-// Sync database (create tables if they don't exist)
-sequelize.sync({ alter: true }).then(() => {
-    console.log('Database synchronized');
-}).catch(err => {
-    console.error('Database sync error:', err);
-});
+
+// Just test connection instead
+sequelize.authenticate()
+    .then(() => console.log('Database connected'))
+    .catch(err => console.error('Database connection error:', err));
 
 app.use('/api/user', userRoutes);
 app.use('/api/bookings', bookingRoutes);
