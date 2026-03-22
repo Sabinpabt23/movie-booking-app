@@ -9,24 +9,20 @@ const Booking = sequelize.define('Booking', {
     },
     user_id: {
         type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'USER',
-            key: 'user_id'
-        }
+        allowNull: false
     },
     show_id: {
         type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'SHOW',
-            key: 'show_id'
-        }
+        allowNull: false
     },
     booking_date: {
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: DataTypes.NOW
+    },
+    total_price: {       
+        type: DataTypes.DECIMAL(10,2),
+        allowNull: true
     }
 }, {
     tableName: 'booking',
