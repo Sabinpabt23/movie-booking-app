@@ -1,0 +1,120 @@
+DROP TABLE IF EXISTS TICKET CASCADE;
+DROP TABLE IF EXISTS SHOW_SEAT CASCADE;
+DROP TABLE IF EXISTS BOOKING CASCADE;
+DROP TABLE IF EXISTS SEAT CASCADE;
+DROP TABLE IF EXISTS SHOW CASCADE;
+DROP TABLE IF EXISTS HALL CASCADE;
+DROP TABLE IF EXISTS THEATER CASCADE;
+DROP TABLE IF EXISTS MOVIE CASCADE;
+DROP TABLE IF EXISTS CONTACT_MESSAGES CASCADE;
+DROP TABLE IF EXISTS ADMIN CASCADE;
+DROP TABLE IF EXISTS "USER" CASCADE;
+
+-- Create USER table
+CREATE TABLE "USER" (
+    user_id SERIAL PRIMARY KEY,
+    user_name VARCHAR(100) NOT NULL,
+    user_email VARCHAR(100) NOT NULL UNIQUE,
+    user_password VARCHAR(255) NOT NULL,
+    user_phone VARCHAR(20),
+    user_dob DATE,
+    user_reg_date DATE NOT NULL DEFAULT CURRENT_DATE
+);
+
+-- Create MOVIE table
+CREATE TABLE MOVIE (
+    movie_id SERIAL PRIMARY KEY,
+    movie_title VARCHAR(200) NOT NULL UNIQUE,
+    movie_description TEXT NOT NULL,
+    movie_duration INTEGER NOT NULL CHECK (movie_duration > 0),
+    movie_genre VARCHAR(50) NOT NULL,
+    movie_rating DECIMAL(3,1) CHECK (movie_rating >= 0 AND movie_rating <= 10),
+    movie_poster TEXT,
+    movie_release_date DATE NOT NULL,
+    movie_language VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create THEATER table
+CREATE TABLE THEATER (
+    theater_id SERIAL PRIMARY KEY,
+    theater_name VARCHAR(100) NOT NULL,
+    theater_location VARCHAR(200) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create HALL table
+CREATE TABLE HALL (
+    hall_id SERIAL PRIMARY KEY,
+    theater_id INTEGER NOT NULL REFERENCES THEATER(theater_id) ON DELETE CASCADE,
+    hall_number VARCHAR(10) NOT NULL,
+    hall_capacity INTEGER NOT NULL CHECK (hall_capacity > 0),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(theater_id, hall_number)
+);
+
+-- Create SHOW table
+CREATE TABLE SHOW (
+    show_id SERIAL PRIMARY KEY,
+    movie_id INTEGER NOT NULL REFERENCES MOVIE(movie_id) ON DELETE CASCADE,
+    hall_id INTEGER NOT NULL REFERENCES HALL(hall_id) ON DELETE CASCADE,
+    show_date DATE NOT NULL,
+    show_time TIME NOT NULL,
+    ticket_price DECIMAL(10,2) NOT NULL CHECK (ticket_price > 0),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(hall_id, show_date, show_time)
+);
+
+-- Create SEAT table
+CREATE TABLE SEAT (
+    seat_id SERIAL PRIMARY KEY,
+    hall_id INTEGER NOT NULL REFERENCES HALL(hall_id) ON DELETE CASCADE,
+    seat_number VARCHAR(5) NOT NULL,
+    UNIQUE(hall_id, seat_number)
+);
+
+-- Create BOOKING table
+CREATE TABLE BOOKING (
+    booking_id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES "USER"(user_id) ON DELETE CASCADE,
+    show_id INTEGER NOT NULL REFERENCES SHOW(show_id) ON DELETE CASCADE,
+    booking_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create SHOW_SEAT table
+CREATE TABLE SHOW_SEAT (
+    show_id INTEGER NOT NULL REFERENCES SHOW(show_id) ON DELETE CASCADE,
+    seat_id INTEGER NOT NULL REFERENCES SEAT(seat_id) ON DELETE CASCADE,
+    status VARCHAR(10) NOT NULL CHECK (status IN ('available', 'selected', 'booked')),
+    booking_id INTEGER REFERENCES BOOKING(booking_id) ON DELETE SET NULL,
+    PRIMARY KEY (show_id, seat_id)
+);
+
+-- Create TICKET table
+CREATE TABLE TICKET (
+    ticket_id SERIAL PRIMARY KEY,
+    booking_id INTEGER NOT NULL UNIQUE REFERENCES BOOKING(booking_id) ON DELETE CASCADE,
+    ticket_issue_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create CONTACT_MESSAGES table
+CREATE TABLE CONTACT_MESSAGES (
+    message_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    category VARCHAR(50) NOT NULL,
+    message TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'unread',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create ADMIN table
+CREATE TABLE ADMIN (
+    admin_id SERIAL PRIMARY KEY,
+    admin_name VARCHAR(100) NOT NULL,
+    admin_email VARCHAR(100) NOT NULL UNIQUE,
+    admin_password VARCHAR(255) NOT NULL,
+    admin_role VARCHAR(20) DEFAULT 'super_admin',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP
+);
