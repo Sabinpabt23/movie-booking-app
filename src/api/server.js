@@ -43,6 +43,15 @@ app.get('/api/test', (req, res) => {
     res.json({ message: 'Server is running' });
 });
 
+// Test admin endpoint
+app.post('/api/admin/login-test', async (req, res) => {
+    console.log('Test endpoint hit!', req.body);
+    res.json({ 
+        message: 'Test endpoint works',
+        received: req.body
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
