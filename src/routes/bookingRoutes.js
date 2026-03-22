@@ -14,13 +14,16 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ message: 'Show ID and seat IDs are required' });
     }
 
-    // Check if show exists
+    // Get show details to get ticket price
     const show = await Show.findByPk(show_id);
     if (!show) {
       return res.status(404).json({ message: 'Show not found' });
     }
 
-    // Check if seats are already booked for this show
+    // Calculate total price
+    const totalPrice = seat_ids.length * show.ticket_price;
+
+    // Check if seats are already booked
     const bookedSeats = await ShowSeat.findAll({
       where: {
         show_id: show_id,
@@ -36,11 +39,12 @@ router.post('/', auth, async (req, res) => {
       });
     }
 
-    // Create booking
+    // Create booking with total price
     const booking = await Booking.create({
       user_id,
       show_id,
-      booking_date: new Date()
+      booking_date: new Date(),
+      total_price: totalPrice  // Add this line
     });
 
     // Update show_seat status and link to booking
@@ -52,7 +56,6 @@ router.post('/', auth, async (req, res) => {
     }
 
     // Create ticket
-    const totalPrice = seat_ids.length * show.ticket_price;
     const ticket = await Ticket.create({
       booking_id: booking.booking_id,
       ticket_issue_date: new Date()
