@@ -7,51 +7,38 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadUserData();
+    fetchProfile();
   }, []);
 
-  const loadUserData = async () => {
+  const fetchProfile = async () => {
     try {
-      // Get user from localStorage
-      const userData = localStorage.getItem('user');
       const token = localStorage.getItem('token');
-      
-      if (userData) {
-        const parsedUser = JSON.parse(userData);
-        
-        // If we have token, fetch fresh data from backend
-        if (token) {
-          const response = await fetch('http://localhost:5000/api/user/profile', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          
-          if (response.ok) {
-            const freshUserData = await response.json();
-            setUser(freshUserData);
-            // Update localStorage with fresh data
-            localStorage.setItem('user', JSON.stringify(freshUserData));
-          } else {
-            // Fallback to localStorage data
-            setUser(parsedUser);
-          }
-        } else {
-          setUser(parsedUser);
-        }
+      if (!token) {
+        window.location.href = '/login';
+        return;
+      }
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${API_URL}/api/user/profile`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+        // Update localStorage with fresh data
+        localStorage.setItem('user', JSON.stringify(userData));
+      } else {
+        // Token expired or invalid
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
       }
     } catch (error) {
-      console.error('Error loading user data:', error);
+      console.error('Error fetching profile:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatDate = (date) => {
-    if (!date) return null;
-    return new Date(date).toLocaleDateString('en-US', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
   };
 
   if (loading) {
@@ -73,12 +60,20 @@ export default function ProfilePage() {
     );
   }
 
+  const formatDate = (date) => {
+    if (!date) return null;
+    return new Date(date).toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
   return (
     <div className="profile-container">
       <h1 className="profile-title">My Profile</h1>
       
       <div className="profile-card">
-        {/* Name Field */}
         <div className="profile-field">
           <span className="profile-label">Full Name</span>
           <div className="profile-value">
@@ -87,7 +82,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Email Field */}
         <div className="profile-field">
           <span className="profile-label">Email Address</span>
           <div className="profile-value">
@@ -96,7 +90,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Phone Field */}
         <div className="profile-field">
           <span className="profile-label">Phone Number</span>
           <div className={`profile-value ${!user.user_phone ? 'na' : ''}`}>
@@ -105,7 +98,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Date of Birth Field */}
         <div className="profile-field">
           <span className="profile-label">Date of Birth</span>
           <div className={`profile-value ${!user.user_dob ? 'na' : ''}`}>
@@ -114,7 +106,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Member Since */}
         {user.user_reg_date && (
           <div className="profile-field">
             <span className="profile-label">Member Since</span>

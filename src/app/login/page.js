@@ -19,37 +19,39 @@ export default function LoginPage() {
         });
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setError('');
+const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-        try {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-            const response = await fetch(`${API_URL}/api/auth/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
-            });
+    try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        
+        const response = await fetch(`${API_URL}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData),
+        });
 
-            const data = await response.json();
+        const data = await response.json();
 
-            if (response.ok) {
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                router.push('/dashboard');
-            } else {
-                setError(data.message || 'Login failed');
-            }
-        } catch (err) {
-            setError('Server error. Please try again.');
-        } finally {
-            setLoading(false);
+        if (response.ok) {
+            // Clear old data first
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            // Set new data
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            router.push('/dashboard');
+        } else {
+            setError(data.message || 'Login failed');
         }
-    };
-
+    } catch (err) {
+        setError('Server error. Please try again.');
+    } finally {
+        setLoading(false);
+    }
+};
     return (
         <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white flex items-center justify-center p-4">
             <div className="max-w-md w-full">
