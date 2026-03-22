@@ -33,7 +33,7 @@ const Admin = sequelize.define('Admin', {
         allowNull: true
     }
 }, {
-    tableName: 'ADMIN',
+    tableName: '"ADMIN"',  
     timestamps: false
 });
 
