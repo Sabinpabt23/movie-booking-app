@@ -47,17 +47,17 @@ router.get('/bookings', auth, async (req, res) => {
             order: [['booking_date', 'DESC']]
         });
 
-        const formattedBookings = bookings.map(booking => ({
-            id: booking.booking_id,
-            movie: booking.Show?.Movie?.movie_title,
-            theater: booking.Show?.Hall?.Theater?.theater_name,
-            hall: booking.Show?.Hall?.hall_number,
-            seats: booking.ShowSeats?.map(ss => ss.Seat?.seat_number).join(', '),
-            date: booking.Show?.show_date,
-            time: booking.Show?.show_time,
-            total: booking.total_price || 0,  // Use stored total_price
-            status: 'confirmed'
-        }));
+      const formattedBookings = bookings.map(booking => ({
+    id: booking.booking_id,
+    movie: booking.Show?.Movie?.movie_title,
+    theater: booking.Show?.Hall?.Theater?.theater_name,
+    hall: booking.Show?.Hall?.hall_number,
+    seats: booking.ShowSeats?.map(ss => ss.Seat?.seat_number).join(', '),
+    date: booking.Show?.show_date,
+    time: booking.Show?.show_time,
+    total: booking.total_price || 0,  // Use stored total_price instead of calculating
+    status: 'confirmed'
+}));
 
         res.json(formattedBookings);
     } catch (error) {
