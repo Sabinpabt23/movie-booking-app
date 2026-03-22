@@ -28,7 +28,10 @@ const register = async (req, res) => {
             user: {
                 user_id: newUser.user_id,
                 user_name: newUser.user_name,
-                user_email: newUser.user_email
+                user_email: newUser.user_email,
+                user_phone: newUser.user_phone,
+                user_dob: newUser.user_dob,
+                user_reg_date: newUser.user_reg_date
             }
         });
     } catch (error) {
@@ -56,13 +59,17 @@ const login = async (req, res) => {
             { expiresIn: '7d' }
         );
 
+        // Return full user data including phone and dob
         res.json({
             message: 'Login successful',
             token,
             user: {
                 user_id: user.user_id,
                 user_name: user.user_name,
-                user_email: user.user_email
+                user_email: user.user_email,
+                user_phone: user.user_phone,
+                user_dob: user.user_dob,
+                user_reg_date: user.user_reg_date
             }
         });
     } catch (error) {
