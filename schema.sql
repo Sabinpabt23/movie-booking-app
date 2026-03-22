@@ -1,24 +1,5 @@
--- =====================================================
--- MOVIE TICKET BOOKING SYSTEM - PostgreSQL Schema
--- =====================================================
-
--- Drop tables if they exist (in correct order due to foreign keys)
-DROP TABLE IF EXISTS TICKET CASCADE;
-DROP TABLE IF EXISTS SHOW_SEAT CASCADE;
-DROP TABLE IF EXISTS BOOKING CASCADE;
-DROP TABLE IF EXISTS SEAT CASCADE;
-DROP TABLE IF EXISTS SHOW CASCADE;
-DROP TABLE IF EXISTS HALL CASCADE;
-DROP TABLE IF EXISTS THEATER CASCADE;
-DROP TABLE IF EXISTS MOVIE CASCADE;
-DROP TABLE IF EXISTS CONTACT_MESSAGES CASCADE;
-DROP TABLE IF EXISTS ADMIN CASCADE;
-DROP TABLE IF EXISTS "USER" CASCADE;
-
--- =====================================================
 -- 1. USER TABLE
--- =====================================================
-CREATE TABLE "USER" (
+CREATE TABLE "user" (
     user_id SERIAL PRIMARY KEY,
     user_name VARCHAR(100) NOT NULL,
     user_email VARCHAR(100) NOT NULL UNIQUE,
@@ -28,9 +9,7 @@ CREATE TABLE "USER" (
     user_reg_date DATE NOT NULL DEFAULT CURRENT_DATE
 );
 
--- =====================================================
 -- 2. MOVIE TABLE
--- =====================================================
 CREATE TABLE movie (
     movie_id SERIAL PRIMARY KEY,
     movie_title VARCHAR(200) NOT NULL UNIQUE,
@@ -44,9 +23,7 @@ CREATE TABLE movie (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- =====================================================
 -- 3. THEATER TABLE
--- =====================================================
 CREATE TABLE theater (
     theater_id SERIAL PRIMARY KEY,
     theater_name VARCHAR(100) NOT NULL,
@@ -54,9 +31,7 @@ CREATE TABLE theater (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- =====================================================
 -- 4. HALL TABLE
--- =====================================================
 CREATE TABLE hall (
     hall_id SERIAL PRIMARY KEY,
     theater_id INTEGER NOT NULL REFERENCES theater(theater_id) ON DELETE CASCADE,
@@ -66,9 +41,15 @@ CREATE TABLE hall (
     UNIQUE(theater_id, hall_number)
 );
 
--- =====================================================
--- 5. SHOW TABLE
--- =====================================================
+-- 5. SEAT TABLE
+CREATE TABLE seat (
+    seat_id SERIAL PRIMARY KEY,
+    hall_id INTEGER NOT NULL REFERENCES hall(hall_id) ON DELETE CASCADE,
+    seat_number VARCHAR(5) NOT NULL,
+    UNIQUE(hall_id, seat_number)
+);
+
+-- 6. SHOW TABLE
 CREATE TABLE show (
     show_id SERIAL PRIMARY KEY,
     movie_id INTEGER NOT NULL REFERENCES movie(movie_id) ON DELETE CASCADE,
@@ -80,52 +61,33 @@ CREATE TABLE show (
     UNIQUE(hall_id, show_date, show_time)
 );
 
--- =====================================================
--- 6. SEAT TABLE
--- =====================================================
-CREATE TABLE seat (
-    seat_id SERIAL PRIMARY KEY,
-    hall_id INTEGER NOT NULL REFERENCES hall(hall_id) ON DELETE CASCADE,
-    seat_number VARCHAR(5) NOT NULL,
-    UNIQUE(hall_id, seat_number)
-);
-
--- =====================================================
--- 7. BOOKING TABLE
--- =====================================================
+-- 7. BOOKING TABLE (Created BEFORE show_seat)
 CREATE TABLE booking (
     booking_id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES "USER"(user_id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES "user"(user_id) ON DELETE CASCADE,
     show_id INTEGER NOT NULL REFERENCES show(show_id) ON DELETE CASCADE,
     booking_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    total_price DECIMAL(10,2)
+    total_price DECIMAL(10,2) NOT NULL
 );
 
--- =====================================================
--- 8. SHOW_SEAT TABLE
--- =====================================================
+-- 8. SHOW_SEAT TABLE (Now booking table exists)
 CREATE TABLE show_seat (
+    id SERIAL PRIMARY KEY,
     show_id INTEGER NOT NULL REFERENCES show(show_id) ON DELETE CASCADE,
     seat_id INTEGER NOT NULL REFERENCES seat(seat_id) ON DELETE CASCADE,
-    status VARCHAR(10) NOT NULL CHECK (status IN ('available', 'selected', 'booked')),
+    status VARCHAR(10) NOT NULL DEFAULT 'available' CHECK (status IN ('available', 'selected', 'booked')),
     booking_id INTEGER REFERENCES booking(booking_id) ON DELETE SET NULL,
-    selected_session_id VARCHAR(100),
-    selected_expiry TIMESTAMP,
-    PRIMARY KEY (show_id, seat_id)
+    UNIQUE(show_id, seat_id)
 );
 
--- =====================================================
 -- 9. TICKET TABLE
--- =====================================================
 CREATE TABLE ticket (
     ticket_id SERIAL PRIMARY KEY,
     booking_id INTEGER NOT NULL UNIQUE REFERENCES booking(booking_id) ON DELETE CASCADE,
     ticket_issue_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- =====================================================
 -- 10. CONTACT_MESSAGES TABLE
--- =====================================================
 CREATE TABLE contact_messages (
     message_id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -136,10 +98,8 @@ CREATE TABLE contact_messages (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- =====================================================
 -- 11. ADMIN TABLE
--- =====================================================
-CREATE TABLE ADMIN (
+CREATE TABLE admin (
     admin_id SERIAL PRIMARY KEY,
     admin_name VARCHAR(100) NOT NULL,
     admin_email VARCHAR(100) NOT NULL UNIQUE,
@@ -149,15 +109,5 @@ CREATE TABLE ADMIN (
     last_login TIMESTAMP
 );
 
--- =====================================================
--- INSERT DEFAULT ADMIN USER
--- =====================================================
-INSERT INTO ADMIN (admin_name, admin_email, admin_password, admin_role) 
+INSERT INTO admin (admin_name, admin_email, admin_password, admin_role) 
 VALUES ('Super Admin', 'admin@example.com', 'admin123', 'super_admin');
-
--- =====================================================
--- VERIFY TABLES
--- =====================================================
-SELECT table_name FROM information_schema.tables 
-WHERE table_schema = 'public' 
-ORDER BY table_name;
