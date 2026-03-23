@@ -10,27 +10,29 @@
     "server": "nodemon src/api/server.js"
   },
   "dependencies": {
-  "@tailwindcss/postcss": "^4",
-  "autoprefixer": "^10.4.27",
-  "bcryptjs": "^3.0.3",
-  "cloudinary": "^1.41.3",
-  "cors": "^2.8.6",
-  "daisyui": "^5.5.19",
-  "dotenv": "^17.3.1",
-  "express": "^5.2.1",
-  "jsonwebtoken": "^9.0.3",
-  "multer": "^2.1.1",
-  "multer-storage-cloudinary": "^4.0.0",
-  "next": "16.1.7",
-  "nodemon": "^3.1.14",
-  "pg": "^8.20.0",
-  "react": "19.2.3",
-  "react-dom": "19.2.3",
-  "sequelize": "^6.37.8",
-  "tailwindcss": "^4.2.1"
-},
-"devDependencies": {
-  "eslint": "^9",
-  "eslint-config-next": "16.1.7"
-}
+    "@tailwindcss/postcss": "^4",
+    "autoprefixer": "^10.4.27",
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^1.41.3",
+    "cors": "^2.8.6",
+    "daisyui": "^5.5.19",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
+    "multer-storage-cloudinary": "^4.0.0",
+    "next": "16.1.7",
+    "nodemon": "^3.1.14",
+    "pg": "^8.20.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "sequelize": "^6.37.8",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "tailwindcss": "^4.2.1"
+  },
+  "devDependencies": {
+    "eslint": "^9",
+    "eslint-config-next": "16.1.7"
+  }
 }

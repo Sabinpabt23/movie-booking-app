@@ -1,3 +1,111 @@
+/**
+ * @swagger
+ * tags:
+ *   name: Admin
+ *   description: Admin management endpoints
+ * security:
+ *   - bearerAuth: []
+ */
+
+/**
+ * @swagger
+ * /api/admin/movies:
+ *   get:
+ *     summary: Get all movies
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of movies
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Movie'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Admin access required
+ */
+
+/**
+ * @swagger
+ * /api/admin/movies:
+ *   post:
+ *     summary: Create a new movie
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - movie_title
+ *               - movie_description
+ *               - movie_duration
+ *               - movie_genre
+ *               - movie_release_date
+ *               - movie_language
+ *             properties:
+ *               movie_title:
+ *                 type: string
+ *               movie_description:
+ *                 type: string
+ *               movie_duration:
+ *                 type: integer
+ *               movie_genre:
+ *                 type: string
+ *               movie_rating:
+ *                 type: number
+ *               movie_poster:
+ *                 type: string
+ *                 format: binary
+ *               movie_release_date:
+ *                 type: string
+ *                 format: date
+ *               movie_language:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Movie created
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Movie:
+ *       type: object
+ *       properties:
+ *         movie_id:
+ *           type: integer
+ *         movie_title:
+ *           type: string
+ *         movie_description:
+ *           type: string
+ *         movie_duration:
+ *           type: integer
+ *         movie_genre:
+ *           type: string
+ *         movie_rating:
+ *           type: number
+ *         movie_poster:
+ *           type: string
+ *         movie_release_date:
+ *           type: string
+ *           format: date
+ *         movie_language:
+ *           type: string
+ */
+
+
 const express = require('express');
 const router = express.Router();
 const adminAuth = require('../middleware/adminAuth');

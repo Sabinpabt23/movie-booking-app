@@ -8,7 +8,8 @@ const adminAuthRoutes = require('../routes/adminAuthRoutes');
 const userRoutes = require('../routes/userRoutes');
 const bookingRoutes = require('../routes/bookingRoutes');
 const sequelize = require('../config/database');
-
+// const swaggerUi = require('swagger-ui-express');
+// const swaggerSpecs = require('../swagger');
 const path = require('path');
 
 dotenv.config();
@@ -38,6 +39,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api', contactRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '../../public/uploads')));
+// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
 app.get('/api/test', (req, res) => {
     res.json({ message: 'Server is running' });
