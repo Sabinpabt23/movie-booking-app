@@ -1,3 +1,117 @@
+/**
+ * @swagger
+ * tags:
+ *   name: User
+ *   description: User endpoints
+ *   security:
+ *     - bearerAuth: []
+ */
+
+/**
+ * @swagger
+ * /api/user/profile:
+ *   get:
+ *     summary: Get current user profile
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user_id:
+ *                   type: integer
+ *                 user_name:
+ *                   type: string
+ *                 user_email:
+ *                   type: string
+ *                 user_phone:
+ *                   type: string
+ *                 user_dob:
+ *                   type: string
+ *                   format: date
+ *                 user_reg_date:
+ *                   type: string
+ *                   format: date
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /api/user/bookings:
+ *   get:
+ *     summary: Get user's all bookings
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of user's bookings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   movie:
+ *                     type: string
+ *                   theater:
+ *                     type: string
+ *                   seats:
+ *                     type: string
+ *                   date:
+ *                     type: string
+ *                   time:
+ *                     type: string
+ *                   total:
+ *                     type: number
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /api/user/bookings/recent:
+ *   get:
+ *     summary: Get user's recent 5 bookings
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of recent bookings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   movie:
+ *                     type: string
+ *                   theater:
+ *                     type: string
+ *                   seats:
+ *                     type: string
+ *                   date:
+ *                     type: string
+ *                   total:
+ *                     type: number
+ */
+
+
+
+
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');

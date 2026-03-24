@@ -1,3 +1,97 @@
+/**
+ * @swagger
+ * tags:
+ *   name: Booking
+ *   description: Booking endpoints
+ *   security:
+ *     - bearerAuth: []
+ */
+
+/**
+ * @swagger
+ * /api/bookings:
+ *   post:
+ *     summary: Create a new booking
+ *     tags: [Booking]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - show_id
+ *               - seat_ids
+ *             properties:
+ *               show_id:
+ *                 type: integer
+ *               seat_ids:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *     responses:
+ *       201:
+ *         description: Booking created successfully
+ *       400:
+ *         description: Invalid request or seats already booked
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Show not found
+ */
+
+/**
+ * @swagger
+ * /api/bookings/{bookingId}:
+ *   get:
+ *     summary: Get booking details by ID
+ *     tags: [Booking]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: bookingId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Booking details
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ *       404:
+ *         description: Booking not found
+ */
+
+/**
+ * @swagger
+ * /api/shows/{showId}/booked-seats:
+ *   get:
+ *     summary: Get booked seats for a show
+ *     tags: [Booking]
+ *     parameters:
+ *       - in: path
+ *         name: showId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: List of booked seat IDs
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: integer
+ */
+
+
+
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');

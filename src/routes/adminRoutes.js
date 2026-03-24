@@ -3,8 +3,38 @@
  * tags:
  *   name: Admin
  *   description: Admin management endpoints
- * security:
- *   - bearerAuth: []
+ *   security:
+ *     - bearerAuth: []
+ */
+
+/**
+ * @swagger
+ * /api/admin/dashboard:
+ *   get:
+ *     summary: Get admin dashboard stats
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalMovies:
+ *                   type: integer
+ *                 totalTheaters:
+ *                   type: integer
+ *                 totalShows:
+ *                   type: integer
+ *                 totalBookings:
+ *                   type: integer
+ *                 totalUsers:
+ *                   type: integer
+ *                 unreadMessages:
+ *                   type: integer
  */
 
 /**
@@ -18,21 +48,6 @@
  *     responses:
  *       200:
  *         description: List of movies
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Movie'
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Admin access required
- */
-
-/**
- * @swagger
- * /api/admin/movies:
  *   post:
  *     summary: Create a new movie
  *     tags: [Admin]
@@ -75,34 +90,301 @@
  *         description: Movie created
  *       401:
  *         description: Unauthorized
+ *       400:
+ *         description: Movie title already exists
  */
 
 /**
  * @swagger
- * components:
- *   schemas:
- *     Movie:
- *       type: object
- *       properties:
- *         movie_id:
+ * /api/admin/movies/{id}:
+ *   get:
+ *     summary: Get movie by ID
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
  *           type: integer
- *         movie_title:
- *           type: string
- *         movie_description:
- *           type: string
- *         movie_duration:
+ *     responses:
+ *       200:
+ *         description: Movie details
+ *       404:
+ *         description: Movie not found
+ *   put:
+ *     summary: Update movie
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
  *           type: integer
- *         movie_genre:
- *           type: string
- *         movie_rating:
- *           type: number
- *         movie_poster:
- *           type: string
- *         movie_release_date:
- *           type: string
- *           format: date
- *         movie_language:
- *           type: string
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               movie_title:
+ *                 type: string
+ *               movie_description:
+ *                 type: string
+ *               movie_duration:
+ *                 type: integer
+ *               movie_genre:
+ *                 type: string
+ *               movie_rating:
+ *                 type: number
+ *               movie_poster:
+ *                 type: string
+ *                 format: binary
+ *               movie_release_date:
+ *                 type: string
+ *                 format: date
+ *               movie_language:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Movie updated
+ *       404:
+ *         description: Movie not found
+ *   delete:
+ *     summary: Delete movie
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Movie deleted
+ *       404:
+ *         description: Movie not found
+ */
+
+/**
+ * @swagger
+ * /api/admin/theaters:
+ *   get:
+ *     summary: Get all theaters
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of theaters with halls
+ *   post:
+ *     summary: Create a new theater
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - theater_name
+ *               - theater_location
+ *             properties:
+ *               theater_name:
+ *                 type: string
+ *               theater_location:
+ *                 type: string
+ *               halls:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     hall_number:
+ *                       type: string
+ *                     capacity:
+ *                       type: integer
+ *     responses:
+ *       201:
+ *         description: Theater created with halls
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /api/admin/theaters/{id}:
+ *   put:
+ *     summary: Update theater
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               theater_name:
+ *                 type: string
+ *               theater_location:
+ *                 type: string
+ *               halls:
+ *                 type: array
+ *     responses:
+ *       200:
+ *         description: Theater updated
+ *       404:
+ *         description: Theater not found
+ *   delete:
+ *     summary: Delete theater
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Theater deleted
+ *       404:
+ *         description: Theater not found
+ */
+
+/**
+ * @swagger
+ * /api/admin/shows:
+ *   get:
+ *     summary: Get all shows
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of shows
+ *   post:
+ *     summary: Create a new show
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - movie_id
+ *               - hall_id
+ *               - show_date
+ *               - show_time
+ *               - ticket_price
+ *             properties:
+ *               movie_id:
+ *                 type: integer
+ *               hall_id:
+ *                 type: integer
+ *               show_date:
+ *                 type: string
+ *                 format: date
+ *               show_time:
+ *                 type: string
+ *               ticket_price:
+ *                 type: number
+ *     responses:
+ *       201:
+ *         description: Show created
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /api/admin/shows/{id}:
+ *   put:
+ *     summary: Update show
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Show updated
+ *   delete:
+ *     summary: Delete show
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Show deleted
+ */
+
+/**
+ * @swagger
+ * /api/admin/bookings:
+ *   get:
+ *     summary: Get all bookings (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all bookings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   booking_id:
+ *                     type: integer
+ *                   user:
+ *                     type: object
+ *                   movie:
+ *                     type: object
+ *                   theater:
+ *                     type: object
+ *                   seats:
+ *                     type: array
+ *                   show_date:
+ *                     type: string
+ *                   show_time:
+ *                     type: string
+ *                   total_price:
+ *                     type: number
  */
 
 
