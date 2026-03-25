@@ -22,7 +22,8 @@ const Booking = sequelize.define('Booking', {
     },
     total_price: {       
         type: DataTypes.DECIMAL(10,2),
-        allowNull: true
+        allowNull: false,
+        defaultValue: 0
     }
 }, {
     tableName: 'booking',

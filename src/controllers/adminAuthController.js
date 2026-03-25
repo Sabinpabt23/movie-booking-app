@@ -4,30 +4,24 @@ const { Admin } = require('../models');
 
 const adminLogin = async (req, res) => {
     try {
-        console.log('Login attempt:', req.body);
-        
         const { admin_email, admin_password } = req.body;
-        console.log('Email:', admin_email);
-        console.log('Password provided:', admin_password);
 
         // Find admin by email
         const admin = await Admin.findOne({ where: { admin_email } });
-        console.log('Admin found:', admin ? 'Yes' : 'No');
         
         if (!admin) {
-            console.log('Admin not found');
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
-        console.log('Stored password:', admin.admin_password);
-        
-        // Compare password (temporary plain text comparison)
-        const isMatch = (admin_password === admin.admin_password);
-        console.log('Password match:', isMatch);
+        // Compare password using bcrypt (works for both hashed and plain text)
+        const isMatch = await bcrypt.compare(admin_password, admin.admin_password);
         
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid email or password' });
         }
+
+        // Update last login
+        await admin.update({ last_login: new Date() });
 
         // Create JWT token
         const token = jwt.sign(

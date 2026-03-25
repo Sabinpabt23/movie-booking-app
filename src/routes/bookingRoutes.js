@@ -95,7 +95,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const { Booking, Show, ShowSeat, Seat, Ticket } = require('../models');
+const { Booking, Show, ShowSeat, Seat, Ticket, Movie, Hall, Theater } = require('../models');
 const { Op } = require('sequelize');
 
 // Create a new booking
@@ -108,13 +108,17 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ message: 'Show ID and seat IDs are required' });
     }
 
-    // Get show details to get ticket price
     const show = await Show.findByPk(show_id);
     if (!show) {
       return res.status(404).json({ message: 'Show not found' });
     }
 
-    // Calculate total price
+    // Check if show date is in the past
+    const showDateTime = new Date(`${show.show_date}T${show.show_time}`);
+    if (showDateTime < new Date()) {
+      return res.status(400).json({ message: 'Cannot book past shows' });
+    }
+
     const totalPrice = seat_ids.length * show.ticket_price;
 
     // Check if seats are already booked
@@ -133,31 +137,33 @@ router.post('/', auth, async (req, res) => {
       });
     }
 
-    // Create booking with total price
-    const booking = await Booking.create({
-      user_id,
-      show_id,
-      booking_date: new Date(),
-      total_price: totalPrice  
-    });
+    // Use transaction to ensure all updates succeed or none
+    const result = await require('../config/database').transaction(async (t) => {
+      const booking = await Booking.create({
+        user_id,
+        show_id,
+        booking_date: new Date(),
+        total_price: totalPrice
+      }, { transaction: t });
 
-    // Update show_seat status and link to booking
-    for (const seat_id of seat_ids) {
-      await ShowSeat.update(
-        { status: 'booked', booking_id: booking.booking_id },
-        { where: { show_id, seat_id } }
-      );
-    }
+      for (const seat_id of seat_ids) {
+        await ShowSeat.update(
+          { status: 'booked', booking_id: booking.booking_id },
+          { where: { show_id, seat_id }, transaction: t }
+        );
+      }
 
-    // Create ticket
-    const ticket = await Ticket.create({
-      booking_id: booking.booking_id,
-      ticket_issue_date: new Date()
+      const ticket = await Ticket.create({
+        booking_id: booking.booking_id,
+        ticket_issue_date: new Date()
+      }, { transaction: t });
+
+      return { booking, ticket };
     });
 
     res.status(201).json({
       message: 'Booking successful',
-      booking_id: booking.booking_id,
+      booking_id: result.booking.booking_id,
       total_price: totalPrice,
       seats: seat_ids.length
     });
@@ -194,7 +200,6 @@ router.get('/:bookingId', auth, async (req, res) => {
       return res.status(404).json({ message: 'Booking not found' });
     }
 
-    // Check if the booking belongs to the user
     if (booking.user_id !== req.user.user_id) {
       return res.status(403).json({ message: 'Access denied' });
     }
@@ -208,7 +213,7 @@ router.get('/:bookingId', auth, async (req, res) => {
       show_date: booking.Show?.show_date,
       show_time: booking.Show?.show_time,
       seats: booking.ShowSeats?.map(ss => ss.Seat?.seat_number).join(', '),
-      total_price: booking.ShowSeats?.length * (booking.Show?.ticket_price || 0),
+      total_price: booking.total_price || 0,  // Use stored value
       ticket_id: booking.Ticket?.ticket_id,
       ticket_issue_date: booking.Ticket?.ticket_issue_date
     };

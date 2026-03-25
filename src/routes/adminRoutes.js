@@ -392,6 +392,7 @@ const express = require('express');
 const router = express.Router();
 const adminAuth = require('../middleware/adminAuth');
 const upload = require('../middleware/uploadCloudinary');
+const sequelize = require('../config/database');
 const {
     Movie, Theater, Hall, Show, 
     Booking, User, Payment, Ticket, 
@@ -943,6 +944,251 @@ router.delete('/messages/:id', async (req, res) => {
         res.json({ message: 'Message deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+
+// ========== SYSTEM STATUS ==========
+router.get('/system/status', adminAuth, async (req, res) => {
+    try {
+        const startTime = Date.now();
+        
+        // 1. Database Status
+        let dbStatus = 'Connected';
+        let dbError = null;
+        try {
+            await sequelize.authenticate();
+        } catch (error) {
+            dbStatus = 'Disconnected';
+            dbError = error.message;
+        }
+
+        // 2. Cloudinary Status
+        let cloudinaryStatus = 'Connected';
+        let cloudinaryError = null;
+        try {
+            const cloudinary = require('cloudinary').v2;
+            cloudinary.config({
+                cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+                api_key: process.env.CLOUDINARY_API_KEY,
+                api_secret: process.env.CLOUDINARY_API_SECRET
+            });
+            const result = await cloudinary.api.ping();
+            if (result.status !== 'ok') {
+                throw new Error('Cloudinary ping failed');
+            }
+        } catch (error) {
+            cloudinaryStatus = 'Disconnected';
+            cloudinaryError = error.message;
+        }
+
+        // 3. API Health Check - Test actual endpoints
+        let apiStatus = 'Operational';
+        let apiError = null;
+        let endpointsTested = [];
+        
+        // Test movies endpoint (public)
+        try {
+            const moviesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/movies`);
+            endpointsTested.push({ 
+                endpoint: '/api/admin/movies', 
+                status: moviesRes.ok ? '✅' : '❌',
+                time: moviesRes.ok ? 'OK' : 'Failed'
+            });
+        } catch (error) {
+            endpointsTested.push({ 
+                endpoint: '/api/admin/movies', 
+                status: '❌', 
+                time: error.message 
+            });
+            apiStatus = 'Degraded';
+            apiError = error.message;
+        }
+
+        // Test auth endpoint (public)
+        try {
+            const authRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_email: 'test@test.com', user_password: 'test' })
+            });
+            endpointsTested.push({ 
+                endpoint: '/api/auth/login', 
+                status: authRes.status === 401 ? '✅' : '⚠️',
+                time: authRes.status === 401 ? 'Auth working' : 'Unexpected response'
+            });
+        } catch (error) {
+            endpointsTested.push({ 
+                endpoint: '/api/auth/login', 
+                status: '❌', 
+                time: error.message 
+            });
+            apiStatus = 'Degraded';
+        }
+
+        // 4. API Response Time
+        const apiResponseTime = Date.now() - startTime;
+
+        // 5. Server Uptime
+        const uptimeSeconds = process.uptime();
+        const uptime = {
+            days: Math.floor(uptimeSeconds / 86400),
+            hours: Math.floor((uptimeSeconds % 86400) / 3600),
+            minutes: Math.floor((uptimeSeconds % 3600) / 60),
+            seconds: Math.floor(uptimeSeconds % 60)
+        };
+
+        // 6. Memory Usage
+        const memoryUsage = process.memoryUsage();
+        const memory = {
+            heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024),
+            heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024),
+            rss: Math.round(memoryUsage.rss / 1024 / 1024)
+        };
+
+        res.json({
+            success: true,
+            server: {
+                status: 'Online',
+                uptime: uptime,
+                memory: memory,
+                nodeVersion: process.version,
+                platform: process.platform
+            },
+            database: {
+                status: dbStatus,
+                error: dbError
+            },
+            cloudinary: {
+                status: cloudinaryStatus,
+                error: cloudinaryError
+            },
+            api: {
+                status: apiStatus,
+                responseTime: apiResponseTime,
+                endpoints: endpointsTested,
+                error: apiError
+            },
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('System status error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to get system status',
+            error: error.message 
+        });
+    }
+});
+
+
+// ========== FINANCIAL REPORT ==========
+router.get('/system/financial', adminAuth, async (req, res) => {
+    try {
+        // Get all bookings with their show and seat details
+        const bookings = await Booking.findAll({
+            include: [
+                {
+                    model: Show,
+                    include: [
+                        { model: Movie },
+                        { 
+                            model: Hall,
+                            include: [{ model: Theater }]
+                        }
+                    ]
+                },
+                {
+                    model: ShowSeat,
+                    include: [{ model: Seat }]
+                }
+            ]
+        });
+
+        let totalRevenue = 0;
+        let totalTicketsSold = 0;
+        let movieRevenue = {};
+        let theaterRevenue = {};
+        let monthlyRevenue = {};
+
+        bookings.forEach(booking => {
+            // Get the number of seats from ShowSeats
+            const seatCount = booking.ShowSeats?.length || 0;
+            
+            // Calculate from show ticket price
+            let bookingTotal = 0;
+            if (seatCount > 0 && booking.Show) {
+                bookingTotal = seatCount * Number(booking.Show.ticket_price);
+            }
+            
+            // Add to totals (use Number() to ensure numeric addition)
+            totalRevenue += Number(bookingTotal);
+            totalTicketsSold += seatCount;
+
+            // Movie revenue
+            const movieTitle = booking.Show?.Movie?.movie_title || 'Unknown';
+            if (movieTitle !== 'Unknown') {
+                movieRevenue[movieTitle] = (movieRevenue[movieTitle] || 0) + Number(bookingTotal);
+            }
+
+            // Theater revenue
+            const theaterName = booking.Show?.Hall?.Theater?.theater_name || 'Unknown';
+            if (theaterName !== 'Unknown') {
+                theaterRevenue[theaterName] = (theaterRevenue[theaterName] || 0) + Number(bookingTotal);
+            }
+
+            // Monthly revenue
+            const date = new Date(booking.booking_date);
+            const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
+            monthlyRevenue[monthKey] = (monthlyRevenue[monthKey] || 0) + Number(bookingTotal);
+        });
+
+        // Get top 5 movies (only show if they have revenue)
+        const topMovies = Object.entries(movieRevenue)
+            .filter(([name, revenue]) => revenue > 0)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([name, revenue]) => ({ name, revenue: Number(revenue) }));
+
+        // Get top 3 theaters
+        const topTheaters = Object.entries(theaterRevenue)
+            .filter(([name, revenue]) => revenue > 0)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(([name, revenue]) => ({ name, revenue: Number(revenue) }));
+
+        // Get last 6 months of revenue
+        const last6Months = [];
+        const now = new Date();
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const monthKey = `${d.getFullYear()}-${d.getMonth() + 1}`;
+            last6Months.push({
+                month: d.toLocaleString('default', { month: 'short', year: 'numeric' }),
+                revenue: Number(monthlyRevenue[monthKey] || 0)
+            });
+        }
+
+        const avgTicketPrice = totalTicketsSold > 0 ? (totalRevenue / totalTicketsSold).toFixed(2) : 0;
+
+        console.log('Calculated totals:', { totalRevenue, totalTicketsSold, avgTicketPrice });
+
+        res.json({
+            success: true,
+            totalRevenue: Number(totalRevenue),
+            totalTicketsSold: totalTicketsSold,
+            avgTicketPrice: Number(avgTicketPrice),
+            topMovies: topMovies,
+            topTheaters: topTheaters,
+            monthlyRevenue: last6Months
+        });
+    } catch (error) {
+        console.error('Financial report error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to get financial report',
+            error: error.message 
+        });
     }
 });
 
