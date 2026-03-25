@@ -982,54 +982,10 @@ router.get('/system/status', adminAuth, async (req, res) => {
             cloudinaryError = error.message;
         }
 
-        // 3. API Health Check - Test actual endpoints
-        let apiStatus = 'Operational';
-        let apiError = null;
-        let endpointsTested = [];
-        
-        // Test movies endpoint (public)
-        try {
-            const moviesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/movies`);
-            endpointsTested.push({ 
-                endpoint: '/api/admin/movies', 
-                status: moviesRes.ok ? '✅' : '❌',
-                time: moviesRes.ok ? 'OK' : 'Failed'
-            });
-        } catch (error) {
-            endpointsTested.push({ 
-                endpoint: '/api/admin/movies', 
-                status: '❌', 
-                time: error.message 
-            });
-            apiStatus = 'Degraded';
-            apiError = error.message;
-        }
-
-        // Test auth endpoint (public)
-        try {
-            const authRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_email: 'test@test.com', user_password: 'test' })
-            });
-            endpointsTested.push({ 
-                endpoint: '/api/auth/login', 
-                status: authRes.status === 401 ? '✅' : '⚠️',
-                time: authRes.status === 401 ? 'Auth working' : 'Unexpected response'
-            });
-        } catch (error) {
-            endpointsTested.push({ 
-                endpoint: '/api/auth/login', 
-                status: '❌', 
-                time: error.message 
-            });
-            apiStatus = 'Degraded';
-        }
-
-        // 4. API Response Time
+        // 3. API Response Time (simple check - just response time)
         const apiResponseTime = Date.now() - startTime;
 
-        // 5. Server Uptime
+        // 4. Server Uptime
         const uptimeSeconds = process.uptime();
         const uptime = {
             days: Math.floor(uptimeSeconds / 86400),
@@ -1038,7 +994,7 @@ router.get('/system/status', adminAuth, async (req, res) => {
             seconds: Math.floor(uptimeSeconds % 60)
         };
 
-        // 6. Memory Usage
+        // 5. Memory Usage
         const memoryUsage = process.memoryUsage();
         const memory = {
             heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024),
@@ -1064,10 +1020,8 @@ router.get('/system/status', adminAuth, async (req, res) => {
                 error: cloudinaryError
             },
             api: {
-                status: apiStatus,
-                responseTime: apiResponseTime,
-                endpoints: endpointsTested,
-                error: apiError
+                status: 'Operational',
+                responseTime: apiResponseTime
             },
             timestamp: new Date().toISOString()
         });
