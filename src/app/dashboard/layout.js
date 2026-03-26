@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import './dashboard.css';
+import { setupAuthInterceptor } from '@/utils/api';
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
@@ -13,6 +14,11 @@ export default function DashboardLayout({ children }) {
   useEffect(() => {
     checkUserAuth();
   }, []);
+
+  // Call this once when app loads
+if (typeof window !== 'undefined') {
+    setupAuthInterceptor();
+}
 
   const checkUserAuth = async () => {
     try {

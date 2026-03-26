@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -12,6 +12,14 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
+    // Check if user was redirected due to locked account
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('locked') === 'true') {
+            setError('Your account has been locked. Please contact admin for assistance.');
+        }
+    }, []);
+
     const handleChange = (e) => {
         setFormData({
             ...formData,
@@ -19,42 +27,43 @@ export default function LoginPage() {
         });
     };
 
-const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
 
-    try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-        
-        const response = await fetch(`${API_URL}/api/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            // COMPLETELY CLEAR all storage
-            localStorage.clear();
-            sessionStorage.clear();
+        try {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
             
-            // Set new data
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            
-            // Force a hard navigation to dashboard
-            window.location.href = '/dashboard';
-        } else {
-            setError(data.message || 'Login failed');
+            const response = await fetch(`${API_URL}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Clear old data first
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                // Set new data
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                router.push('/dashboard');
+            } else if (response.status === 403) {
+                // Account locked
+                setError(data.message || 'Your account has been locked. Please contact admin for assistance.');
+            } else {
+                setError(data.message || 'Login failed');
+            }
+        } catch (err) {
+            setError('Server error. Please try again.');
+        } finally {
+            setLoading(false);
         }
-    } catch (err) {
-        setError('Server error. Please try again.');
-    } finally {
-        setLoading(false);
-    }
-};
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white flex items-center justify-center p-4">
             <div className="max-w-md w-full">

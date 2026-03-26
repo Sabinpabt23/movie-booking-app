@@ -31,7 +31,14 @@ const User = sequelize.define('User', {
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: DataTypes.NOW
-    }
+    },
+    
+    is_locked: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+}
+
+    
 }, {
     tableName: 'user',
     timestamps: false

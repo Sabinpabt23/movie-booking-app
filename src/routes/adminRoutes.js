@@ -947,7 +947,6 @@ router.delete('/messages/:id', async (req, res) => {
     }
 });
 
-
 // ========== SYSTEM STATUS ==========
 router.get('/system/status', adminAuth, async (req, res) => {
     try {
@@ -1143,6 +1142,126 @@ router.get('/system/financial', adminAuth, async (req, res) => {
             message: 'Failed to get financial report',
             error: error.message 
         });
+    }
+});
+
+
+// ========== EXPORT FINANCIAL REPORT ==========
+router.get('/export/financial', adminAuth, async (req, res) => {
+    try {
+        // Get all bookings with details
+        const bookings = await Booking.findAll({
+            include: [
+                {
+                    model: User,
+                    attributes: ['user_name', 'user_email']
+                },
+                {
+                    model: Show,
+                    include: [
+                        { model: Movie },
+                        { 
+                            model: Hall,
+                            include: [{ model: Theater }]
+                        }
+                    ]
+                },
+                {
+                    model: ShowSeat,
+                    include: [{ model: Seat }]
+                }
+            ],
+            order: [['booking_date', 'DESC']]
+        });
+
+        // Prepare CSV data
+        const csvData = bookings.map(booking => {
+            const seatCount = booking.ShowSeats?.length || 0;
+            const ticketPrice = booking.Show?.ticket_price || 0;
+            const totalAmount = seatCount * ticketPrice;
+            
+            return {
+                'Booking ID': booking.booking_id,
+                'Booking Date': new Date(booking.booking_date).toLocaleString(),
+                'User Name': booking.User?.user_name || 'N/A',
+                'User Email': booking.User?.user_email || 'N/A',
+                'Movie': booking.Show?.Movie?.movie_title || 'N/A',
+                'Theater': booking.Show?.Hall?.Theater?.theater_name || 'N/A',
+                'Hall': booking.Show?.Hall?.hall_number || 'N/A',
+                'Show Date': booking.Show?.show_date ? new Date(booking.Show.show_date).toLocaleDateString() : 'N/A',
+                'Show Time': booking.Show?.show_time || 'N/A',
+                'Seats': booking.ShowSeats?.map(ss => ss.Seat?.seat_number).join(', ') || 'N/A',
+                'Seats Count': seatCount,
+                'Ticket Price': ticketPrice,
+                'Total Amount': totalAmount
+            };
+        });
+
+        // Convert to CSV
+        const headers = Object.keys(csvData[0] || {});
+        const csvRows = [
+            headers.join(','),
+            ...csvData.map(row => headers.map(header => {
+                let value = row[header];
+                // Escape commas and quotes
+                if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+                    value = `"${value.replace(/"/g, '""')}"`;
+                }
+                return value;
+            }).join(','))
+        ];
+        
+        const csv = csvRows.join('\n');
+
+        // Set headers for CSV download
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename=financial_report_${new Date().toISOString().split('T')[0]}.csv`);
+        res.send(csv);
+        
+    } catch (error) {
+        console.error('Export error:', error);
+        res.status(500).json({ message: 'Failed to export report', error: error.message });
+    }
+});
+
+
+// ========== USER MANAGEMENT ==========
+// Get all users
+router.get('/users', adminAuth, async (req, res) => {
+    try {
+        const users = await User.findAll({
+            attributes: ['user_id', 'user_name', 'user_email', 'user_phone', 'user_reg_date', 'is_locked'],
+            order: [['user_id', 'DESC']]
+        });
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// Lock/Unlock user
+router.put('/users/:id/lock', adminAuth, async (req, res) => {
+    try {
+        const { is_locked } = req.body;
+        const user = await User.findByPk(req.params.id);
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        await user.update({ is_locked: is_locked });
+        
+        res.json({ 
+            message: is_locked ? 'User locked successfully' : 'User unlocked successfully',
+            user: {
+                user_id: user.user_id,
+                user_name: user.user_name,
+                user_email: user.user_email,
+                is_locked: user.is_locked
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
 

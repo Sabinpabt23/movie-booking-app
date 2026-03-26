@@ -11,11 +11,19 @@ const auth = async (req, res, next) => {
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findByPk(decoded.user_id, {
-            attributes: ['user_id', 'user_name', 'user_email', 'user_phone', 'user_dob', 'user_reg_date']
+            attributes: ['user_id', 'user_name', 'user_email', 'user_phone', 'user_dob', 'user_reg_date', 'is_locked']
         });
 
         if (!user) {
             throw new Error();
+        }
+
+        // Check if account is locked
+        if (user.is_locked) {
+            return res.status(403).json({ 
+                message: 'Your account has been locked. Please contact admin for assistance.',
+                isLocked: true
+            });
         }
 
         req.user = user;

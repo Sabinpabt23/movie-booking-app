@@ -10,11 +10,14 @@ export default function AdminSettings() {
     const [error, setError] = useState('');
     const [serverDown, setServerDown] = useState(false);
     const [financial, setFinancial] = useState(null);
+    const [systemReport, setSystemReport] = useState(null);
+const [systemReportLoading, setSystemReportLoading] = useState(false);
 const [financialLoading, setFinancialLoading] = useState(false);
 
     useEffect(() => {
         fetchSystemStatus();
         fetchFinancialReport();
+        fetchSystemReport();
     }, []);
 
     const fetchSystemStatus = async () => {
@@ -93,6 +96,54 @@ const fetchFinancialReport = async () => {
         setError('');
         fetchSystemStatus();
     };
+
+    const fetchSystemReport = async () => {
+    try {
+        setSystemReportLoading(true);
+        const token = localStorage.getItem('adminToken');
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const response = await fetch(`${API_URL}/api/admin/system/report`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            setSystemReport(data);
+        }
+    } catch (error) {
+        console.error('Error fetching system report:', error);
+    } finally {
+        setSystemReportLoading(false);
+    }
+};
+
+const exportFinancialReport = async () => {
+    try {
+        const token = localStorage.getItem('adminToken');
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        
+        const response = await fetch(`${API_URL}/api/admin/export/financial`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `financial_report_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        } else {
+            alert('Failed to export report');
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('Error exporting report');
+    }
+};
 
     const getStatusBadge = (status) => {
         if (status === 'Online' || status === 'Connected' || status === 'Operational') {
@@ -330,9 +381,28 @@ const fetchFinancialReport = async () => {
     marginBottom: '1.5rem',
     border: '1px solid #f0f0f0'
 }}>
-    <h2 style={{ fontSize: '1.2rem', fontWeight: '600', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        💰 Financial Report
-    </h2>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h2 style={{ fontSize: '1.2rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            💰 Financial Report
+        </h2>
+        <button
+            onClick={exportFinancialReport}
+            style={{
+                background: '#10b981',
+                color: 'white',
+                border: 'none',
+                padding: '0.5rem 1rem',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+            }}
+        >
+            Export CSV
+        </button>
+    </div>
 
     {financialLoading ? (
         <div style={{ textAlign: 'center', padding: '2rem' }}>
@@ -345,8 +415,8 @@ const fetchFinancialReport = async () => {
                 <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
                     <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>Total Revenue</div>
                     <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#f97315' }}>
-    Rs {Number(financial.totalRevenue || 0).toLocaleString()}
-</div>
+                        Rs {Number(financial.totalRevenue || 0).toLocaleString()}
+                    </div>
                 </div>
                 <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
                     <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>Tickets Sold</div>
@@ -357,7 +427,7 @@ const fetchFinancialReport = async () => {
                 <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
                     <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>Avg Ticket Price</div>
                     <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#f97315' }}>
-                       Rs {Number(financial.avgTicketPrice || 0).toLocaleString()}
+                        Rs {Number(financial.avgTicketPrice || 0).toLocaleString()}
                     </div>
                 </div>
             </div>

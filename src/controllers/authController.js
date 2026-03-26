@@ -48,6 +48,14 @@ const login = async (req, res) => {
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
+
+         // Check if account is locked
+        if (user.is_locked) {
+            return res.status(403).json({ 
+                message: 'Your account has been locked. Please contact admin for assistance.' 
+            });
+        }
+
         const isMatch = await bcrypt.compare(user_password, user.user_password);
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid email or password' });
