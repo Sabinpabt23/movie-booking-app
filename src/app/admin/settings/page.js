@@ -12,15 +12,11 @@ export default function AdminSettings() {
     const [error, setError] = useState('');
     const [serverDown, setServerDown] = useState(false);
     const [financial, setFinancial] = useState(null);
-    const [systemReport, setSystemReport] = useState(null);
-    const [systemReportLoading, setSystemReportLoading] = useState(false);
     const [financialLoading, setFinancialLoading] = useState(false);
-    const [actionLoading, setActionLoading] = useState(false);
 
     useEffect(() => {
         fetchSystemStatus();
         fetchFinancialReport();
-        fetchSystemReport();
     }, []);
 
     const fetchSystemStatus = async () => {
