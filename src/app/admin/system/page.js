@@ -39,6 +39,32 @@ export default function SystemController() {
         }
     };
 
+// Add this function to your SystemControllerContent component
+const archiveOldData = async () => {
+    if (!confirm('This will archive all bookings older than 30 days. This action cannot be undone. Continue?')) return;
+    
+    setActionLoading(true);
+    try {
+        const token = localStorage.getItem('adminToken');
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const response = await fetch(`${API_URL}/api/admin/archive/old-data`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const data = await response.json();
+        alert(data.message);
+        
+        // fetchUsers already exists in your component
+        fetchUsers();
+    } catch (error) {
+        console.error('Archive error:', error);
+        alert('Failed to archive data');
+    } finally {
+        setActionLoading(false);
+    }
+};
+
     const toggleUserLock = async (userId, currentStatus) => {
         if (!confirm(`Are you sure you want to ${currentStatus ? 'unlock' : 'lock'} this user?`)) return;
         
@@ -169,6 +195,34 @@ export default function SystemController() {
                     </table>
                 </div>
             </div>
+
+{/* Data Maintenance Section */}
+<div style={{
+    background: '#f9fafb',
+    borderRadius: '12px',
+    padding: '1rem',
+    marginTop: '1.5rem'
+}}>
+    <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>🗄️ Data Maintenance</h3>
+    <p style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '1rem' }}>
+        Archive bookings older than 30 days to keep the database clean.
+    </p>
+    <button
+        onClick={archiveOldData}
+        disabled={actionLoading}
+        style={{
+            background: '#6b7280',
+            color: 'white',
+            border: 'none',
+            padding: '0.5rem 1rem',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '0.8rem'
+        }}
+    >
+        🗄️ {actionLoading ? 'Archiving...' : 'Archive Old Data (30+ days)'}
+    </button>
+</div>
 
             {/* Add spinner style */}
             <style jsx>{`

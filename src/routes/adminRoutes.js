@@ -1265,4 +1265,63 @@ router.put('/users/:id/lock', adminAuth, async (req, res) => {
     }
 });
 
+// ========== DATA ARCHIVE ==========
+router.post('/archive/old-data', adminAuth, async (req, res) => {
+    try {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        // Find old bookings (where show date is older than 30 days)
+        const oldBookings = await Booking.findAll({
+            include: [{
+                model: Show,
+                where: {
+                    show_date: { [Op.lt]: thirtyDaysAgo }
+                }
+            }],
+            attributes: ['booking_id']
+        });
+        
+        const bookingIds = oldBookings.map(b => b.booking_id);
+        
+        if (bookingIds.length === 0) {
+            return res.json({ 
+                message: 'No data older than 30 days found',
+                archived: 0 
+            });
+        }
+        
+        // Archive bookings
+        await sequelize.query(
+            `INSERT INTO booking_archive SELECT *, NOW() FROM booking WHERE booking_id IN (:ids)`,
+            { replacements: { ids: bookingIds } }
+        );
+        
+        // Archive tickets
+        await sequelize.query(
+            `INSERT INTO ticket_archive SELECT *, NOW() FROM ticket WHERE booking_id IN (:ids)`,
+            { replacements: { ids: bookingIds } }
+        );
+        
+        // Archive show_seat entries
+        await sequelize.query(
+            `INSERT INTO show_seat_archive SELECT *, NOW() FROM show_seat WHERE booking_id IN (:ids)`,
+            { replacements: { ids: bookingIds } }
+        );
+        
+        // Delete from main tables
+        await ShowSeat.destroy({ where: { booking_id: bookingIds } });
+        await Ticket.destroy({ where: { booking_id: bookingIds } });
+        await Booking.destroy({ where: { booking_id: bookingIds } });
+        
+        res.json({ 
+            message: `Archived ${bookingIds.length} old bookings`,
+            archived: bookingIds.length 
+        });
+    } catch (error) {
+        console.error('Archive error:', error);
+        res.status(500).json({ message: 'Failed to archive data', error: error.message });
+    }
+});
+
 module.exports = router;

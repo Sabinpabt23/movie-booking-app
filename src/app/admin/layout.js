@@ -65,7 +65,6 @@ export default function AdminLayout({ children }) {
     { path: '/admin/shows', icon: '🎫', label: 'Shows' },
     { path: '/admin/bookings', icon: '📅', label: 'Bookings' },
     { path: '/admin/messages', icon: '✉️', label: 'Messages' },
-    { path: '/admin/system', icon: '🛡️', label: 'System Controller' },
     { path: '/admin/settings', icon: '⚙️', label: 'Settings' },
   ];
 
