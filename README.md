@@ -36,26 +36,6 @@ A complete full-stack movie ticket booking system where users can browse movies,
 - User account lock/unlock for account restrictions
 - Data archive to clean up old bookings (30+ days)
 
-## Project Structure
-movie-booking-app/
-├── src/
-│ ├── api/ # Express server configuration
-│ ├── app/ # Next.js pages (client and admin)
-│ │ ├── admin/ # Admin panel pages
-│ │ ├── dashboard/ # User dashboard pages
-│ │ ├── login/ # Login page
-│ │ └── register/ # Registration page
-│ ├── components/ # Reusable React components
-│ ├── config/ # Database configuration
-│ ├── controllers/ # Request handlers
-│ ├── middleware/ # Auth and upload middleware
-│ ├── models/ # Sequelize models
-│ ├── routes/ # API routes
-│ └── utils/ # Helper functions
-├── public/ # Static assets
-└── uploads/ # Local uploads (migrated to Cloudinary)
-
-text
 
 ## Environment Variables
 
