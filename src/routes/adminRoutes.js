@@ -406,7 +406,7 @@ router.get('/dashboard', async (req, res) => {
         const now = new Date();
         const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const endOfPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+       
 
         // Helper function for simple linear percentage (each item = 0.01%)
         const getLinearChange = (current) => {
@@ -463,6 +463,8 @@ router.get('/dashboard', async (req, res) => {
                 }
             }
         });
+
+        
 
         // Calculate linear percentages based on current counts
         const movieChange = getLinearChange(totalMovies);
@@ -656,6 +658,10 @@ router.post('/theaters', async (req, res) => {
 
 // Helper function to generate seats for a hall
 const generateSeatsForHall = async (hallId, capacity) => {
+    if (!capacity || capacity <= 0) {
+        console.log(`Invalid capacity ${capacity} for hall ${hallId}`);
+        return;
+    }
     const seats = [];
     const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
     let seatCount = 0;
@@ -1266,8 +1272,13 @@ router.put('/users/:id/lock', adminAuth, async (req, res) => {
 });
 
 // ========== DATA ARCHIVE ==========
+let lastArchiveTime = null;
 router.post('/archive/old-data', adminAuth, async (req, res) => {
     try {
+        if (lastArchiveTime && (Date.now() - lastArchiveTime) < 60000) {
+        return res.status(429).json({ message: 'Please wait before archiving again' });
+        }
+    lastArchiveTime = Date.now();
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         

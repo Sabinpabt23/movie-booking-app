@@ -17,20 +17,40 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Allowed origins for CORS
+const allowedOrigins = process.env.NODE_ENV === 'production' 
+    ? [
+        'https://movie-booking-app.vercel.app',
+        'https://movie-booking-app-smoky.vercel.app',
+        'https://movie-booking-app-git-main.vercel.app'
+      ]
+    : ['http://localhost:3000'];
+
+// CORS configuration
 app.use(cors({
-    origin: '*',
+    origin: function(origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.log('Blocked origin:', origin);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
 
 app.use(express.json());
 
-
-// Just test connection instead
+// Database connection check
 sequelize.authenticate()
     .then(() => console.log('Database connected'))
     .catch(err => console.error('Database connection error:', err));
 
+// API Routes
 app.use('/api/user', userRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api', bookingRoutes);
@@ -41,19 +61,34 @@ app.use('/api/admin', adminRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '../../public/uploads')));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
+// Health check endpoint
 app.get('/api/test', (req, res) => {
     res.json({ message: 'Server is running' });
 });
 
-// Test admin endpoint
-app.post('/api/admin/login-test', async (req, res) => {
-    console.log('Test endpoint hit!', req.body);
-    res.json({ 
-        message: 'Test endpoint works',
-        received: req.body
+// Test admin endpoint (only in development)
+if (process.env.NODE_ENV !== 'production') {
+    app.post('/api/admin/login-test', async (req, res) => {
+        console.log('Test endpoint hit!', req.body);
+        res.json({ 
+            message: 'Test endpoint works',
+            received: req.body
+        });
     });
+}
+
+// 404 handler for undefined routes
+app.use((req, res) => {
+    res.status(404).json({ message: 'Route not found' });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+    console.error('Unhandled error:', err);
+    res.status(500).json({ message: 'Internal server error' });
 });
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });

@@ -10,6 +10,10 @@ const auth = async (req, res, next) => {
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const currentTime = Date.now() / 1000;
+    if (decoded.exp && (decoded.exp - currentTime) < 86400) {
+        console.log(`Token for user ${decoded.user_id} expires in less than 24 hours`);
+    }
         const user = await User.findByPk(decoded.user_id, {
             attributes: ['user_id', 'user_name', 'user_email', 'user_phone', 'user_dob', 'user_reg_date', 'is_locked']
         });
@@ -30,6 +34,9 @@ const auth = async (req, res, next) => {
         req.token = token;
         next();
     } catch (error) {
+        if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: 'Session expired. Please login again.' });
+    }
         res.status(401).json({ message: 'Please authenticate' });
     }
 };
