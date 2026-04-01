@@ -35,6 +35,22 @@
  *                   type: integer
  *                 unreadMessages:
  *                   type: integer
+ * 
+ *                    changes:
+ *                   type: object
+ *                   properties:
+ *                     movies:
+ *                       type: object
+ *                     theaters:
+ *                       type: object
+ *                     shows:
+ *                       type: object
+ *                     bookings:
+ *                       type: object
+ *                     users:
+ *                       type: object
+ *                     messages:
+ *                       type: object
  */
 
 /**
@@ -385,6 +401,251 @@
  *                     type: string
  *                   total_price:
  *                     type: number
+ */
+
+/**
+ * @swagger
+ * /api/admin/system/status:
+ *   get:
+ *     summary: Get system health status
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: System status including server, database, cloudinary, and API
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 server:
+ *                   type: object
+ *                   properties:
+ *                     status:
+ *                       type: string
+ *                     uptime:
+ *                       type: object
+ *                     memory:
+ *                       type: object
+ *                     nodeVersion:
+ *                       type: string
+ *                 database:
+ *                   type: object
+ *                   properties:
+ *                     status:
+ *                       type: string
+ *                 cloudinary:
+ *                   type: object
+ *                   properties:
+ *                     status:
+ *                       type: string
+ *                 api:
+ *                   type: object
+ *                   properties:
+ *                     status:
+ *                       type: string
+ *                     responseTime:
+ *                       type: integer
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /api/admin/system/financial:
+ *   get:
+ *     summary: Get financial report (revenue, tickets, top movies, monthly revenue)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Financial report data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 totalRevenue:
+ *                   type: number
+ *                 totalTicketsSold:
+ *                   type: integer
+ *                 avgTicketPrice:
+ *                   type: number
+ *                 topMovies:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       name:
+ *                         type: string
+ *                       revenue:
+ *                         type: number
+ *                 topTheaters:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       name:
+ *                         type: string
+ *                       revenue:
+ *                         type: number
+ *                 monthlyRevenue:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       month:
+ *                         type: string
+ *                       revenue:
+ *                         type: number
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /api/admin/export/financial:
+ *   get:
+ *     summary: Export financial report as CSV
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: CSV file download
+ *         content:
+ *           text/csv:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Failed to export report
+ */
+
+/**
+ * @swagger
+ * /api/admin/users:
+ *   get:
+ *     summary: Get all users with lock status
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   user_id:
+ *                     type: integer
+ *                   user_name:
+ *                     type: string
+ *                   user_email:
+ *                     type: string
+ *                   user_phone:
+ *                     type: string
+ *                   user_reg_date:
+ *                     type: string
+ *                     format: date
+ *                   is_locked:
+ *                     type: boolean
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @swagger
+ * /api/admin/users/{id}/lock:
+ *   put:
+ *     summary: Lock or unlock a user account
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: User ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - is_locked
+ *             properties:
+ *               is_locked:
+ *                 type: boolean
+ *                 description: true to lock, false to unlock
+ *     responses:
+ *       200:
+ *         description: User lock status updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 user:
+ *                   type: object
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ */
+
+/**
+ * @swagger
+ * /api/admin/archive/old-data:
+ *   post:
+ *     summary: Archive bookings older than 30 days
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Archive completed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 archived:
+ *                   type: integer
+ *       429:
+ *         description: Rate limit - please wait before archiving again
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Archive failed
+ */
+
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
  */
 
 
