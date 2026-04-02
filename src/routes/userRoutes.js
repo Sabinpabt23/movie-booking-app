@@ -117,23 +117,64 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const { User, Booking, Show, Movie, Theater, Hall, Seat, ShowSeat, Payment, Ticket } = require('../models');
 const { Op } = require('sequelize');
+const upload = require('../middleware/uploadCloudinary');
 
 // Get user profile
 router.get('/profile', auth, async (req, res) => {
-  try {
-    const user = await User.findByPk(req.user.user_id, {
-      attributes: ['user_id', 'user_name', 'user_email', 'user_phone', 'user_dob', 'user_reg_date']
-    });
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    try {
+        const user = await User.findByPk(req.user.user_id, {
+            attributes: ['user_id', 'user_name', 'user_email', 'user_phone', 'user_dob', 'user_reg_date', 'profile_picture']
+        });
+        
+        res.json(user);
+    } catch (error) {
+        console.error('Error fetching profile:', error);
+        res.status(500).json({ message: 'Server error' });
     }
-    
-    res.json(user);
-  } catch (error) {
-    console.error('Error fetching profile:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+});
+
+// Upload profile picture
+router.post('/upload-profile-pic', auth, upload.single('profile_picture'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        const user = await User.findByPk(req.user.user_id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        await user.update({ profile_picture: req.file.path });
+
+        res.json({
+            message: 'Profile picture updated successfully',
+            profile_picture: req.file.path
+        });
+    } catch (error) {
+        console.error('Upload error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+
+// Remove profile picture
+router.delete('/remove-profile-pic', auth, async (req, res) => {
+    try {
+        const user = await User.findByPk(req.user.user_id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        await user.update({ profile_picture: null });
+
+        res.json({
+            message: 'Profile picture removed successfully'
+        });
+    } catch (error) {
+        console.error('Remove profile pic error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
 });
 
 // Get user's bookings

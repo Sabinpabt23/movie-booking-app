@@ -11,29 +11,64 @@ export default function DashboardLayout({ children }) {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    checkUserAuth();
-  }, []);
-
   // Call this once when app loads
 if (typeof window !== 'undefined') {
     setupAuthInterceptor();
 }
 
-  const checkUserAuth = async () => {
+
+useEffect(() => {
+    checkUserAuth();
+    
+    // Handle profile update event
+    const handleProfileUpdate = () => {
+        const refreshUser = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+                const response = await fetch(`${API_URL}/api/user/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const freshUserData = await response.json();
+                    console.log('Refreshing user data...');
+                    console.log('New profile picture:', freshUserData.profile_picture);
+                    setUser(freshUserData);
+                    localStorage.setItem('user', JSON.stringify(freshUserData));
+                }
+            } catch (error) {
+                console.error('Error refreshing user:', error);
+            }
+        };
+        
+        refreshUser();
+    };
+    
+    window.addEventListener('profile-updated', handleProfileUpdate);
+    
+    return () => {
+        window.removeEventListener('profile-updated', handleProfileUpdate);
+    };
+}, []);
+const checkUserAuth = async () => {
     try {
         const token = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
+        
+        console.log('checkUserAuth called');
+        console.log('Token exists:', !!token);
         
         if (!token || !storedUser) {
             window.location.href = '/login';
             return;
         }
 
-        // Parse stored user
         const parsedStoredUser = JSON.parse(storedUser);
+        console.log('Stored user:', parsedStoredUser);
         
-        // Fetch fresh user data
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
         const response = await fetch(`${API_URL}/api/user/profile`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -41,17 +76,10 @@ if (typeof window !== 'undefined') {
 
         if (response.ok) {
             const freshUserData = await response.json();
-            
-            // Check if the fetched user matches the stored user
-            if (freshUserData.user_id !== parsedStoredUser.user_id) {
-                console.log('User mismatch, clearing storage');
-                localStorage.clear();
-                window.location.href = '/login';
-                return;
-            }
+            console.log('Fresh user data from API:', freshUserData);
+            console.log('Profile picture from API:', freshUserData.profile_picture);
             
             setUser(freshUserData);
-            // Update localStorage with fresh data
             localStorage.setItem('user', JSON.stringify(freshUserData));
         } else {
             localStorage.clear();
@@ -66,6 +94,7 @@ if (typeof window !== 'undefined') {
         setLoading(false);
     }
 };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -93,8 +122,16 @@ if (typeof window !== 'undefined') {
             <div className="user-section">
               <Link href="/dashboard/profile" className="profile-link">
                 <div className="profile-avatar">
-                  {user?.user_name?.charAt(0).toUpperCase()}
-                </div>
+  {user?.profile_picture ? (
+    <img 
+      src={user.profile_picture} 
+      alt="Profile" 
+      style={{ width: '35px', height: '35px', borderRadius: '50%', objectFit: 'cover' }}
+    />
+  ) : (
+    user?.user_name?.charAt(0).toUpperCase()
+  )}
+</div>
                 <span>Profile</span>
               </Link>
               <button onClick={handleLogout} className="logout-btn">

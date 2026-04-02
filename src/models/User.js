@@ -33,6 +33,10 @@ const User = sequelize.define('User', {
         defaultValue: DataTypes.NOW
     },
     
+    profile_picture: {
+    type: DataTypes.TEXT,
+    allowNull: true
+},
     is_locked: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
