@@ -17,16 +17,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Allowed origins for CORS
-const allowedOrigins = process.env.NODE_ENV === 'production' 
-    ? [
-        'https://movie-booking-app.vercel.app',
-        'https://movie-booking-app-smoky.vercel.app',
-        'https://movie-booking-jlmjfuhw6-sabins-projects-adbdfac2.vercel.app',
-        'https://movie-booking-app-git-main.vercel.app',
-        'https://movie-booking-jlmjfuhw6-sabins-projects-adbdfac2.vercel.app/'
-      ]
-    : ['http://localhost:3000'];
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+}));
 
 // CORS configuration
 app.use(cors({
