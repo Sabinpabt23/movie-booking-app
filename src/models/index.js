@@ -10,6 +10,7 @@ const Booking = require('./Booking');
 const Ticket = require('./Ticket');
 const ContactMessage = require('./ContactMessage');
 const Admin = require('./Admin');
+const RefreshToken = require('./RefreshToken');
 
 // Define relationships
 
@@ -53,6 +54,10 @@ ShowSeat.belongsTo(Booking, { foreignKey: 'booking_id' });
 Booking.hasOne(Ticket, { foreignKey: 'booking_id' });
 Ticket.belongsTo(Booking, { foreignKey: 'booking_id' });
 
+// User - RefreshToken (one to many)
+User.hasMany(RefreshToken, { foreignKey: 'user_id' });
+RefreshToken.belongsTo(User, { foreignKey: 'user_id' });
+
 module.exports = {
     sequelize,
     User,
@@ -65,6 +70,7 @@ module.exports = {
     Booking,
     ContactMessage,
     Admin,
-    Ticket
+    Ticket,
+    RefreshToken
     
 };

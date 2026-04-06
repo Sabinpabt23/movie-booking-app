@@ -4,6 +4,12 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import './dashboard.css';
 import { setupAuthInterceptor } from '@/utils/api';
+import { setupTokenInterceptor } from '@/utils/tokenInterceptor';
+
+// Call this once
+if (typeof window !== 'undefined') {
+    setupTokenInterceptor();
+}
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();

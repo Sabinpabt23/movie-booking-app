@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
+const RefreshToken = require('../models/RefreshToken');
 
 const register = async (req, res) => {
     try {
@@ -48,8 +49,6 @@ const login = async (req, res) => {
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
-
-         // Check if account is locked
         if (user.is_locked) {
             return res.status(403).json({ 
                 message: 'Your account has been locked. Please contact admin for assistance.' 
@@ -61,26 +60,42 @@ const login = async (req, res) => {
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
-        const token = jwt.sign(
-            { user_id: user.user_id, user_email: user.user_email },
+        // Generate Access Token (short lived - 15 minutes)
+        const accessToken = jwt.sign(
+            { user_id: user.user_id, user_email: user.user_email, type: 'access' },
             process.env.JWT_SECRET,
-            { expiresIn: '7d' }
+            { expiresIn: '15m' }
         );
 
-        // Return full user data including phone and dob
+        // Generate Refresh Token (long lived - 7 days)
+        const refreshTokenString = RefreshToken.generateToken();
+        const refreshTokenExpiry = new Date();
+        refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 7);
+
+        await RefreshToken.create({
+            user_id: user.user_id,
+            token: refreshTokenString,
+            expires_at: refreshTokenExpiry,
+            device_info: req.headers['user-agent'] || 'unknown'
+        });
+
         res.json({
             message: 'Login successful',
-            token,
+            access_token: accessToken,
+            refresh_token: refreshTokenString,
+            expires_in: 900, // 15 minutes in seconds
             user: {
                 user_id: user.user_id,
                 user_name: user.user_name,
                 user_email: user.user_email,
                 user_phone: user.user_phone,
                 user_dob: user.user_dob,
-                user_reg_date: user.user_reg_date
+                user_reg_date: user.user_reg_date,
+                profile_picture: user.profile_picture
             }
         });
     } catch (error) {
+        console.error('Login error:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };

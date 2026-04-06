@@ -109,5 +109,15 @@ CREATE TABLE admin (
     last_login TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    token_id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES "user"(user_id) ON DELETE CASCADE,
+    token TEXT NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    revoked BOOLEAN DEFAULT FALSE,
+    device_info VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 INSERT INTO admin (admin_name, admin_email, admin_password, admin_role) 
 VALUES ('Super Admin', 'admin@example.com', 'admin123', 'super_admin');

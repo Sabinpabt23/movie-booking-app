@@ -13,12 +13,15 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
 
     // Check if user was redirected due to locked account
-    useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('locked') === 'true') {
-            setError('Your account has been locked. Please contact admin for assistance.');
-        }
-    }, []);
+   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('locked') === 'true') {
+        setError('Your account has been locked. Please contact admin for assistance.');
+    }
+    if (urlParams.get('expired') === 'true') {
+        setError('Your session has expired. Please login again.');
+    }
+}, []);
 
     const handleChange = (e) => {
         setFormData({
@@ -27,42 +30,46 @@ export default function LoginPage() {
         });
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setError('');
+   const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-        try {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        
+        const response = await fetch(`${API_URL}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // Clear old data first
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user');
             
-            const response = await fetch(`${API_URL}/api/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                // Clear old data first
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                // Set new data
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                router.push('/dashboard');
-            } else if (response.status === 403) {
-                // Account locked
-                setError(data.message || 'Your account has been locked. Please contact admin for assistance.');
-            } else {
-                setError(data.message || 'Login failed');
-            }
-        } catch (err) {
-            setError('Server error. Please try again.');
-        } finally {
-            setLoading(false);
+            // Set new data with refresh token support
+            localStorage.setItem('access_token', data.access_token);
+            localStorage.setItem('refresh_token', data.refresh_token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            
+            router.push('/dashboard');
+        } else if (response.status === 403) {
+            // Account locked
+            setError(data.message || 'Your account has been locked. Please contact admin for assistance.');
+        } else {
+            setError(data.message || 'Login failed');
         }
-    };
+    } catch (err) {
+        setError('Server error. Please try again.');
+    } finally {
+        setLoading(false);
+    }
+};
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white flex items-center justify-center p-4">
