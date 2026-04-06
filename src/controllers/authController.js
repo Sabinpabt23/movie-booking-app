@@ -83,6 +83,7 @@ const login = async (req, res) => {
             message: 'Login successful',
             access_token: accessToken,
             refresh_token: refreshTokenString,
+            token: accessToken,
             expires_in: 900, // 15 minutes in seconds
             user: {
                 user_id: user.user_id,
