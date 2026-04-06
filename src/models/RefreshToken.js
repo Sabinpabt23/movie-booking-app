@@ -40,7 +40,6 @@ const RefreshToken = sequelize.define('RefreshToken', {
     updatedAt: false
 });
 
-// Generate a random refresh token
 RefreshToken.generateToken = function() {
     return crypto.randomBytes(40).toString('hex');
 };
