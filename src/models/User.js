@@ -18,7 +18,7 @@ const User = sequelize.define('User', {
     },
     user_password: {
         type: DataTypes.STRING(255),
-        allowNull: false
+        allowNull: true
     },
     user_phone: {
         type: DataTypes.STRING(20)
@@ -40,6 +40,16 @@ const User = sequelize.define('User', {
     is_locked: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
+},
+
+google_id: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    unique: true
+},
+avatar: {
+    type: DataTypes.TEXT,
+    allowNull: true
 }
 
     

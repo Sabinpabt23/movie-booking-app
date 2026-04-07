@@ -55,20 +55,28 @@ const login = async (req, res) => {
             });
         }
 
+        // Check if user signed up with Google (no password)
+        if (!user.user_password) {
+            return res.status(401).json({ 
+                message: 'This account uses Google Sign-In. Please use "Login with Google" instead.' 
+            });
+        }
+
         const isMatch = await bcrypt.compare(user_password, user.user_password);
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
-        // Generate Access Token (short lived - 15 minutes)
+        // Generate Access Token
         const accessToken = jwt.sign(
             { user_id: user.user_id, user_email: user.user_email, type: 'access' },
             process.env.JWT_SECRET,
             { expiresIn: '15m' }
         );
 
-        // Generate Refresh Token (long lived - 7 days)
-        const refreshTokenString = RefreshToken.generateToken();
+        // Generate Refresh Token
+        const crypto = require('crypto');
+        const refreshTokenString = crypto.randomBytes(40).toString('hex');
         const refreshTokenExpiry = new Date();
         refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 7);
 
@@ -84,7 +92,7 @@ const login = async (req, res) => {
             access_token: accessToken,
             refresh_token: refreshTokenString,
             token: accessToken,
-            expires_in: 900, // 15 minutes in seconds
+            expires_in: 900,
             user: {
                 user_id: user.user_id,
                 user_name: user.user_name,
@@ -92,7 +100,7 @@ const login = async (req, res) => {
                 user_phone: user.user_phone,
                 user_dob: user.user_dob,
                 user_reg_date: user.user_reg_date,
-                profile_picture: user.profile_picture
+                profile_picture: user.avatar || user.profile_picture
             }
         });
     } catch (error) {
