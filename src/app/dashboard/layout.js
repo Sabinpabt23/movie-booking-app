@@ -15,27 +15,19 @@ export default function DashboardLayout({ children }) {
     console.log('1. Current URL:', window.location.href);
     console.log('2. URL hash:', window.location.hash);
     
-   // STEP 1: Check for Google OAuth tokens in URL hash
+// Check for Google OAuth tokens in URL hash
 const hash = window.location.hash;
 if (hash && hash.includes('access_token')) {
-  console.log('3. Google OAuth redirect detected!');
   const params = new URLSearchParams(hash.substring(1));
   const accessToken = params.get('access_token');
   const refreshToken = params.get('refresh_token');
   const userDataEncoded = params.get('user');
   
-  console.log('4. Access token found:', !!accessToken);
-  console.log('5. Refresh token found:', !!refreshToken);
-  console.log('6. User data found:', !!userDataEncoded);
-  
   if (accessToken && refreshToken && userDataEncoded) {
-    console.log('7. Saving tokens and user data to localStorage');
     localStorage.setItem('access_token', accessToken);
     localStorage.setItem('refresh_token', refreshToken);
     const userData = JSON.parse(decodeURIComponent(userDataEncoded));
     localStorage.setItem('user', JSON.stringify(userData));
-    console.log('8. User data saved:', userData);
-    console.log('9. Redirecting to /dashboard');
     window.location.href = '/dashboard';
     return;
   }
