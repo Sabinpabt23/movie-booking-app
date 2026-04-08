@@ -158,7 +158,7 @@ router.get('/google/callback', async (req, res) => {
             
             // Redirect to frontend dashboard with tokens AND user data
             const frontendUrl = process.env.NODE_ENV === 'production'
-                ? 'https://movie-booking-app.vercel.app'
+                ? process.env.FRONTEND_URL
                 : 'http://localhost:3000';
             
             const redirectUrl = `${frontendUrl}/dashboard#access_token=${accessToken}&refresh_token=${refreshTokenString}&user=${encodedUserData}`;
