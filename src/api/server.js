@@ -34,20 +34,8 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-const allowedOrigins = [
-    'http://localhost:3000',
-    'https://movie-booking-app.vercel.app',
-    'https://movie-booking-o9m2k9tvu-sabins-projects-adbdfac2.vercel.app'
-];
-
 app.use(cors({
-    origin: function(origin, callback) {
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
@@ -86,6 +74,15 @@ if (process.env.NODE_ENV !== 'production') {
         });
     });
 }
+
+// Root endpoint for health check
+app.get('/', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        message: 'Server is running',
+        timestamp: new Date().toISOString()
+    });
+});
 
 // 404 handler for undefined routes
 app.use((req, res) => {
