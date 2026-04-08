@@ -34,9 +34,20 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// CORS - allow all origins (temporary fix)
+const allowedOrigins = [
+    'http://localhost:3000',
+    'https://movie-booking-app.vercel.app',
+    'https://movie-booking-o9m2k9tvu-sabins-projects-adbdfac2.vercel.app'
+];
+
 app.use(cors({
-    origin: '*',
+    origin: function(origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
