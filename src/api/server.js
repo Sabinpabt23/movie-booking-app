@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const session = require('express-session');  // Move this up
+const session = require('express-session');  
 const passport = require('../config/passport');
 const contactRoutes = require('../routes/contactRoutes');
 const authRoutes = require('../routes/authRoutes');
