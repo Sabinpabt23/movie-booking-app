@@ -84,6 +84,9 @@ app.get('/', (req, res) => {
     });
 });
 
+// Also log the port being used
+console.log(`Attempting to bind to port: ${PORT}`);
+
 // 404 handler for undefined routes
 app.use((req, res) => {
     res.status(404).json({ message: 'Route not found' });
