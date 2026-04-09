@@ -15,7 +15,7 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token') || localStorage.getItem('token');
       if (!token) {
         window.location.href = '/login';
         return;
@@ -62,7 +62,7 @@ export default function ProfilePage() {
 
     setUploading(true);
     try {
-      const token = localStorage.getItem('token');
+const token = localStorage.getItem('access_token') || localStorage.getItem('token');
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       
       const formData = new FormData();
@@ -103,7 +103,7 @@ const handleRemovePicture = async () => {
     
     setUploading(true);
     try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('access_token') || localStorage.getItem('token');
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
         
         const response = await fetch(`${API_URL}/api/user/remove-profile-pic`, {

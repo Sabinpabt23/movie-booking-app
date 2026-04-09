@@ -14,7 +14,7 @@ export default function MyBookingsPage() {
   const fetchBookings = async () => {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token') || localStorage.getItem('token');
       const response = await fetch(`${API_URL}/api/user/bookings`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });

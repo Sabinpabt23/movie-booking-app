@@ -66,7 +66,7 @@ const fetchData = async () => {
     setMovies(moviesWithPrices);
     setTheaters(Array.isArray(theatersData) ? theatersData : []);
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('access_token') || localStorage.getItem('token');
     if (token) {
       const bookingsRes = await fetch(`${API_URL}/api/user/bookings/recent`, {
         headers: { 'Authorization': `Bearer ${token}` }
