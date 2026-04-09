@@ -34,8 +34,25 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+const allowedOrigins = [
+    'http://localhost:3000',  // Local development
+    'https://movie-booking-app.vercel.app',  // Main production domain
+    'https://movie-booking-app-git-main-sabins-projects-adbdfac2.vercel.app',
+    'https://movie-booking-o9m2k9tvu-sabins-projects-adbdfac2.vercel.app'
+];
+
 app.use(cors({
-    origin: '*',
+    origin: function(origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.log('Blocked origin:', origin);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
