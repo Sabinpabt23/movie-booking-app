@@ -17,10 +17,10 @@ const path = require('path');
 
 dotenv.config();
 
-const app = express();  // ← app must be created FIRST
+const app = express();  // Create the Express app
 const PORT = process.env.PORT || 5000;
 
-// Session middleware - MUST be AFTER app is created
+// Session configuration
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your_secret_key',
     resave: false,
