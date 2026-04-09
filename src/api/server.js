@@ -37,6 +37,7 @@ app.use(passport.session());
 const allowedOrigins = [
     'http://localhost:3000',  // Local development
     'https://movie-booking-app.vercel.app',  // Main production domain
+    'https://movie-booking-app-smoky.vercel.app', 
     'https://movie-booking-app-git-main-sabins-projects-adbdfac2.vercel.app',
     'https://movie-booking-o9m2k9tvu-sabins-projects-adbdfac2.vercel.app'
 ];
